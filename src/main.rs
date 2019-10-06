@@ -3,12 +3,12 @@ use std::time::Duration;
 
 use blinkt::Blinkt;
 
-use signal_hook::{iterator::Signals, SIGINT};
+use signal_hook::{iterator::Signals, SIGINT, SIGTERM};
 
 use crossbeam_channel::{bounded, tick, Receiver, select};
 
 fn ctrl_channel() -> Result<Receiver<()>, Box<dyn Error>> {
-    let signals = Signals::new(&[SIGINT])?;
+    let signals = Signals::new(&[SIGINT, SIGTERM])?;
 
     let (sender, receiver) = bounded(100);
     thread::spawn(move || {
@@ -44,9 +44,9 @@ fn vertical_pulse(width:usize, height:usize, tick:usize, r:&mut[u8], g:&mut[u8],
         }
         for x in 0..width {
             let index = get_index(height, x, y);
-            r[index] = (val * 40.) as u8;
-            g[index] = (val * 40.) as u8;
-            b[index] = (val * 40.) as u8;
+            r[index] = (val * 255.) as u8;
+            g[index] = (val * 255.) as u8;
+            b[index] = (val * 255.) as u8;
         }
     }
 }
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Remember to enable spi via raspi-config!
     let mut blinkt = Blinkt::with_spi(16_000_000, 144)?;
 
-    let width: usize = 2;
+    let width: usize = 4;
     let height: usize = 30;
     let dots: usize = width * height;
     let mut red = Vec::with_capacity(dots);
