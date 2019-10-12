@@ -1,4 +1,13 @@
 use std::ops::Mul;
+use serde::{Serialize, Deserialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PainterParams {
+    global_brightness: f32,
+    speed: f32,
+    color: Color,
+    secondary_colors: Vec<Color>,
+}
 
 pub trait Painter {
     fn paint(&mut self);
@@ -7,7 +16,7 @@ pub trait Painter {
 }
 
 // A single RGB color.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -36,14 +45,14 @@ impl Mul<f32> for Color {
 struct SweepPainter {
     height: usize,
     width: usize,
-    color: Color,
     leds: LedString,
     tick: usize,
+    params: PainterParams,
 }
 
 impl SweepPainter {
-    pub fn new(width: usize, height: usize, color: Color) -> Self {
-        return SweepPainter { height: height, width: width, color: color, leds: new_led_string(width * height), tick: 0 };
+    pub fn new(width: usize, height: usize, params: PainterParams) -> Self {
+        return SweepPainter { height: height, width: width, params: params, leds: new_led_string(width * height), tick: 0 };
     }
 }
 
@@ -62,7 +71,7 @@ impl Painter for SweepPainter {
             }
             for x in 0..self.width {
                 let index = get_index(self.height, x, y);
-                self.leds[index] =  self.color * val;
+                self.leds[index] =  self.params.color * val;
             }
         }
         self.tick += 1;
@@ -108,16 +117,15 @@ fn new_led_string (size: usize) -> LedString {
 pub struct HexPainter {
     height: usize,
     width: usize,
-    color: Color,
-    fade_colors: Vec<Color>,
+    params: PainterParams,
     leds: LedString,
     tick: usize,
     start_color_idx: usize,
 }
 
 impl HexPainter {
-    pub fn new(width: usize, height: usize, color: Color, fade_colors: Vec<Color>) -> Self {
-        return HexPainter { height: height, width: width, color: color, fade_colors: fade_colors,
+    pub fn new(width: usize, height: usize, params: PainterParams) -> Self {
+        return HexPainter { height: height, width: width, params: params,
                             leds: new_led_string(width * height), tick: 0, start_color_idx: 0};
     }
     // Paint a hexagonal region around [x, y]
@@ -155,20 +163,20 @@ impl Painter for HexPainter {
                 } else if val > 1.0 {
                     val = 1.0;
                 }
-                self.paint_hex(x, y, self.color * val);
+                self.paint_hex(x, y, self.params.color * val);
             } else {
                 val = 1.0 - (center - width - y) * 0.05;
-                self.paint_hex(x, y, self.fade_colors[color_idx] * val);
+                self.paint_hex(x, y, self.params.secondary_colors[color_idx] * val);
             }
             x = if x == 2 { 1 } else { 2 };
             y += 2.5;
-            color_idx = (color_idx + 1) % self.fade_colors.len();
+            color_idx = (color_idx + 1) % self.params.secondary_colors.len();
         }
 
         self.tick += 1;
         if center > self.height as f32 * growth {
             self.tick = 0;
-            self.start_color_idx = (self.start_color_idx + 1) % self.fade_colors.len();
+            self.start_color_idx = (self.start_color_idx + 1) % self.params.secondary_colors.len();
         }
     }
     fn length(&self) -> usize {
@@ -179,10 +187,10 @@ impl Painter for HexPainter {
     }
 }
 
-pub fn make_painter(painter_type: &str, width: usize, height: usize, primary_color: Color,
-                    secondary_colors: Vec<Color>) -> Box<dyn Painter> {
+pub fn make_painter(painter_type: &str, width: usize, height: usize, params: PainterParams
+                    ) -> Box<dyn Painter> {
     if painter_type == "hex" {
-        return Box::new(HexPainter::new(width, height, primary_color, secondary_colors));
+        return Box::new(HexPainter::new(width, height, params));
     }
-    return Box::new(SweepPainter::new(width, height, primary_color));
+    return Box::new(SweepPainter::new(width, height, params));
 }

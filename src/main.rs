@@ -1,4 +1,11 @@
+#![feature(proc_macro_hygiene, decl_macro)]
+#[macro_use] extern crate rocket;
+#[macro_use] extern crate rocket_contrib;
+use rocket_contrib::json::Json;
+use rocket::State;
+
 use std::{error::Error, thread};
+use std::sync::{Mutex};
 use std::time::Duration;
 
 use blinkt::Blinkt;
@@ -8,6 +15,12 @@ use signal_hook::{iterator::Signals, SIGINT, SIGTERM};
 use crossbeam_channel::{bounded, tick, Receiver, select};
 
 mod painter;
+
+#[get("/"), format = "json"]
+fn index(params: State<Mutex<painter::PainterParams>>) -> Option<Json<painter::PainterParams>> {
+    let mut data = params.lock().unwrap();
+    Json(params)
+}
 
 // Set up signal handlers to listen on their own thread.
 fn ctrl_channel() -> Result<Receiver<()>, Box<dyn Error>> {
@@ -24,8 +37,29 @@ fn ctrl_channel() -> Result<Receiver<()>, Box<dyn Error>> {
     Ok(receiver)
 }
 
+fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<()>, Box<dyn Error>> {
+    let (sender, receiver) = bounded(5);
+    thread::spawn(move || {
+        rocket::ignite()
+            .manage(Mutex::new(params))
+            .mount("/", routes![index]).launch();
+    });
+
+    Ok(receiver)
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
+    let params = painter::PainterParams {global_brightness: 1.0,
+                                         speed: 0.5,
+                                         color: painter::Color::new(0xFFFFFF),
+                                         secondary_colors: vec![
+                                             painter::Color::new(0x4267B2),  // FB blue.
+                                             painter::Color::new(0xFF5000),  // red-orange.
+                                             painter::Color::new(0x898F9C),  // FB grey.
+                                         ]};
+
     let ctrl_c_events = ctrl_channel()?;
+    let webserver = rocket_channel(params.clone())?;
     let ticks = tick(Duration::from_millis(30));
 
     // Remember to enable spi via raspi-config!
@@ -34,13 +68,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let width: usize = 4;
     let height: usize = 30;
     let dots: usize = width * height;
-    let fade_colors = vec![
-        painter::Color::new(0x4267B2),  // FB blue.
-        painter::Color { r: 255, g: 80, b: 0 },
-        painter::Color::new(0x898F9C),  // FB grey.
-    ];
-    let color = painter::Color { r: 255, g: 255, b: 255 };
-    let mut arm_painter = painter::make_painter("hex", width, height, color, fade_colors);
+    let mut arm_painter = painter::make_painter("hex", width, height, params);
 
     loop {
         select! {
