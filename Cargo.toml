@@ -7,9 +7,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-blinkt = "0.5"
 signal-hook = "0.1.10"
 crossbeam-channel = "*"
 rocket = "0.4.2"
 rocket_contrib = "0.4"
 serde = { version = "1.0", features = ["derive"] }
+
+[target.'cfg(target_arch = "arm")'.dependencies]
+blinkt = "0.5"
