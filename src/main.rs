@@ -24,9 +24,10 @@ fn get(params: State<Mutex<painter::PainterParams>>) -> content::Json<String> {
 fn post(json_params: String,
         params: State<Mutex<painter::PainterParams>>,
         sender: State<Sender<painter::PainterParams>>) -> Result<(), Box<dyn Error>> {
-    let new_params = painter::PainterParams::deserialize(&json_params)?;
+    let mut new_params = painter::PainterParams::deserialize(&json_params)?;
     let mut old_params = params.lock().unwrap();
     *old_params = new_params.clone();
+    new_params.apply_dimming();
     sender.send(new_params).unwrap();
     Ok(())
 }
@@ -59,17 +60,19 @@ fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<painter::Pa
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let params = painter::PainterParams {global_brightness: 1.0,
-                                         speed: 0.5,
-                                         color: painter::Color::new(0xFFFFFF),
-                                         secondary_colors: vec![
-                                             painter::Color::new(0x4267B2),  // FB blue.
-                                             painter::Color::new(0xFF5000),  // red-orange.
-                                             painter::Color::new(0x898F9C),  // FB grey.
-                                         ]};
+    let mut params = painter::PainterParams {
+        global_brightness: 1.0,
+        speed: 0.5,
+        color: painter::Color::new(0xFFFFFF),
+        secondary_colors: vec![
+            painter::Color::new(0x4267B2),  // FB blue.
+            painter::Color::new(0xFF5000),  // red-orange.
+            painter::Color::new(0x898F9C),  // FB grey.
+        ]};
 
     let ctrl_c_events = ctrl_channel()?;
     let webserver = rocket_channel(params.clone())?;
+    params.apply_dimming();  // Apply dimming after caching the web version.
     let ticks = tick(Duration::from_millis(30));
 
 

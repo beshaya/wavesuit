@@ -1,4 +1,4 @@
-use std::ops::Mul;
+use std::ops;
 use std::error::Error;
 use serde::{Serialize, Deserialize};
 use serde_json;
@@ -18,6 +18,12 @@ impl PainterParams {
     pub fn deserialize(string: &str) -> Result<PainterParams, Box<dyn Error>> {
         let p: PainterParams = serde_json::from_str(string)?;
         return Ok(p);
+    }
+    pub fn apply_dimming(&mut self) {
+        self.color *= self.global_brightness;
+        for idx in 0..self.secondary_colors.len() {
+            self.secondary_colors[idx] *= self.global_brightness;
+        }
     }
 }
 
@@ -46,12 +52,20 @@ impl Color {
     }
 }
 
-impl Mul<f32> for Color {
+impl ops::Mul<f32> for Color {
     type Output = Color;
     fn mul(self, rhs: f32) -> Self::Output {
         return Color {r: ((self.r as f32) * rhs ) as u8,
                       g: ((self.g as f32) * rhs ) as u8,
                       b: ((self.b as f32) * rhs ) as u8};
+    }
+}
+
+impl ops::MulAssign<f32> for Color {
+    fn mul_assign(&mut self, rhs: f32) {
+        self.r = ((self.r as f32) * rhs ) as u8;
+        self.g = ((self.g as f32) * rhs ) as u8;
+        self.b = ((self.b as f32) * rhs ) as u8;
     }
 }
 
