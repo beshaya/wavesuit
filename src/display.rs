@@ -30,17 +30,21 @@ pub fn make_display(pixels: usize) -> Result<BlinktDisplay, Box<dyn Error>> {
 
 // Generic Implementation
 #[cfg(not(target_arch = "arm"))]
-struct FakeDisplay {}
+struct FakeDisplay {
+    pixels: usize,
+}
 #[cfg(not(target_arch = "arm"))]
 impl Display for FakeDisplay {
-    fn set_pixel(&mut self, _index: usize, _r: u8, _g: u8, _b: u8) {}
-    fn show(&mut self) -> Result<(), Box<dyn Error> {
+    fn set_pixel(&mut self, _index: usize, _r: u8, _g: u8, _b: u8) {
+        assert!(_index < self.pixels);
+    }
+    fn show(&mut self) -> Result<(), Box<dyn Error>> {
         Ok(())
     }
 }
 #[cfg(not(target_arch = "arm"))]
 fn make_display(pixels: usize) -> Result<FakeDisplay, Box<dyn Error>> {
-    Ok(FakeDisplay {})
+    Ok(FakeDisplay {pixels: pixels})
 }
 
 pub fn new(pixels: usize) -> Result<Box<dyn Display>, Box<dyn Error>> {

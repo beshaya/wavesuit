@@ -9,15 +9,26 @@ use std::time::Duration;
 
 use signal_hook::{iterator::Signals, SIGINT, SIGTERM};
 
-use crossbeam_channel::{bounded, tick, Receiver, select};
+use crossbeam_channel::{bounded, tick, Receiver, Sender, select};
 
 mod display;
 mod painter;
 
 #[get("/")]
-fn index(params: State<Mutex<painter::PainterParams>>) -> content::Json<String> {
+fn get(params: State<Mutex<painter::PainterParams>>) -> content::Json<String> {
     let data = params.lock().unwrap();
     content::Json(data.serialize())
+}
+
+#[post("/", format = "application/json", data = "<json_params>")]
+fn post(json_params: String,
+        params: State<Mutex<painter::PainterParams>>,
+        sender: State<Sender<painter::PainterParams>>) -> Result<(), Box<dyn Error>> {
+    let new_params = painter::PainterParams::deserialize(&json_params)?;
+    let mut old_params = params.lock().unwrap();
+    *old_params = new_params.clone();
+    sender.send(new_params).unwrap();
+    Ok(())
 }
 
 // Set up signal handlers to listen on their own thread.
@@ -35,13 +46,13 @@ fn ctrl_channel() -> Result<Receiver<()>, Box<dyn Error>> {
     Ok(receiver)
 }
 
-fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<()>, Box<dyn Error>> {
-    let (sender, receiver) = bounded(5);
+fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<painter::PainterParams>, Box<dyn Error>> {
+    let (sender, receiver) = bounded::<painter::PainterParams>(5);
     thread::spawn(move || {
         rocket::ignite()
             .manage(Mutex::new(params))
             .manage(sender)
-            .mount("/", routes![index]).launch();
+            .mount("/", routes![get, post]).launch();
     });
 
     Ok(receiver)
@@ -80,6 +91,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     display.set_pixel(i, pixel.r, pixel.g, pixel.b);
                 }
                 display.show()?;
+            }
+            recv(webserver) -> new_params => {
+                arm_painter.set_params(new_params?);
             }
             recv(ctrl_c_events) -> _ => {
                 println!();

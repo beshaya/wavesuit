@@ -1,4 +1,5 @@
 use std::ops::Mul;
+use std::error::Error;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
@@ -14,12 +15,17 @@ impl PainterParams {
     pub fn serialize(&self) -> String {
         return serde_json::to_string(self).unwrap();
     }
+    pub fn deserialize(string: &str) -> Result<PainterParams, Box<dyn Error>> {
+        let p: PainterParams = serde_json::from_str(string)?;
+        return Ok(p);
+    }
 }
 
 pub trait Painter {
     fn paint(&mut self);
     fn length(&self) -> usize;
     fn get(&self, index:usize) -> Color;
+    fn set_params(&mut self, params: PainterParams);
 }
 
 // A single RGB color.
@@ -85,6 +91,7 @@ impl Painter for SweepPainter {
     }
     fn length(&self) -> usize { self.leds.len() }
     fn get(&self, index: usize) -> Color { self.leds[index] }
+    fn set_params(&mut self, params: PainterParams) { self.params = params; }
 }
 
 // Assumes vertical indexing, going down on first path.
@@ -186,12 +193,9 @@ impl Painter for HexPainter {
             self.start_color_idx = (self.start_color_idx + 1) % self.params.secondary_colors.len();
         }
     }
-    fn length(&self) -> usize {
-        return self.leds.len();
-    }
-    fn get(&self, index: usize) -> Color {
-        return self.leds[index];
-    }
+    fn length(&self) -> usize { self.leds.len() }
+    fn get(&self, index: usize) -> Color { self.leds[index] }
+    fn set_params(&mut self, params: PainterParams) { self.params = params; }
 }
 
 pub fn make_painter(painter_type: &str, width: usize, height: usize, params: PainterParams
