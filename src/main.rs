@@ -40,6 +40,7 @@ fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<()>, Box<dy
     thread::spawn(move || {
         rocket::ignite()
             .manage(Mutex::new(params))
+            .manage(sender)
             .mount("/", routes![index]).launch();
     });
 
@@ -66,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let dots: usize = width * height;
 
     // Remember to enable spi via raspi-config!
-    let mut display = display::new(dots);
+    let mut display = display::new(dots)?;
 
     let mut arm_painter = painter::make_painter("hex", width, height, params);
 
