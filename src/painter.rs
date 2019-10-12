@@ -1,12 +1,19 @@
 use std::ops::Mul;
 use serde::{Serialize, Deserialize};
+use serde_json;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PainterParams {
-    global_brightness: f32,
-    speed: f32,
-    color: Color,
-    secondary_colors: Vec<Color>,
+    pub global_brightness: f32,
+    pub speed: f32,
+    pub color: Color,
+    pub secondary_colors: Vec<Color>,
+}
+
+impl PainterParams {
+    pub fn serialize(&self) -> String {
+        return serde_json::to_string(self).unwrap();
+    }
 }
 
 pub trait Painter {

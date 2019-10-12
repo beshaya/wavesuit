@@ -1,8 +1,7 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 #[macro_use] extern crate rocket;
-#[macro_use] extern crate rocket_contrib;
-use rocket_contrib::json::Json;
 use rocket::State;
+use rocket::response::content;
 
 use std::{error::Error, thread};
 use std::sync::{Mutex};
@@ -15,10 +14,10 @@ use crossbeam_channel::{bounded, tick, Receiver, select};
 mod display;
 mod painter;
 
-#[get("/"), format = "json"]
-fn index(params: State<Mutex<painter::PainterParams>>) -> Option<Json<painter::PainterParams>> {
-    let mut data = params.lock().unwrap();
-    Json(params)
+#[get("/")]
+fn index(params: State<Mutex<painter::PainterParams>>) -> content::Json<String> {
+    let data = params.lock().unwrap();
+    content::Json(data.serialize())
 }
 
 // Set up signal handlers to listen on their own thread.
