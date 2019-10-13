@@ -3,6 +3,9 @@ use std::error::Error;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
+extern crate rand;
+use rand::prelude::*;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PainterParams {
     pub painter: String,
@@ -68,6 +71,16 @@ impl ops::MulAssign<f32> for Color {
         self.g = ((self.g as f32) * rhs ) as u8;
         self.b = ((self.b as f32) * rhs ) as u8;
     }
+}
+
+struct Bounds {
+    height: usize,
+    width: usize,
+}
+
+impl Bounds {
+    pub fn in_x(&self, x: i32) -> bool {x >= 0 && x < (self.width as i32)}
+    pub fn in_y(&self, y: f32) -> bool {y >= 0.0 && y < self.height as f32 + 0.5}
 }
 
 struct SweepPainter {
@@ -213,9 +226,82 @@ impl Painter for HexPainter {
     fn set_params(&mut self, params: PainterParams) { self.params = params; }
 }
 
+struct Trail {
+    head_x: usize,
+    head_y: f32,
+    x_dir: i32,
+    y_diag_start: f32,
+}
+
+pub struct LinePainter {
+    bounds: Bounds,
+    params: PainterParams,
+    leds: LedString,
+    tick: f32,
+    start_color_idx: usize,
+    trails: Vec<Trail>,
+    rng: ThreadRng,
+}
+
+impl LinePainter {
+    pub fn new(width: usize, height: usize, params: PainterParams) -> Self {
+        let mut line = LinePainter { bounds: Bounds{height: height, width: width}, params: params,
+                                     leds: new_led_string(width * height), tick: 0.0, start_color_idx: 0,
+                                     trails: Vec::with_capacity(2), rng: rand::thread_rng()};
+        line.trails.push(Trail {head_x: 0, head_y: 0.0, x_dir: 1, y_diag_start: 20.});
+        line.trails.push(Trail {head_x: width - 1, head_y: 0.5, x_dir: -1, y_diag_start: 20.});
+        return line;
+    }
+}
+
+impl Painter for LinePainter {
+    fn paint(&mut self) {
+        let fade: f32 = 0.85;
+        // Advance on integers.
+        let advance: bool = self.tick.floor() < (self.tick + self.params.speed).floor();
+        self.tick += self.params.speed;
+        for idx in 0..self.leds.len() {
+            self.leds[idx] *= fade;
+        }
+        let mut reset = false;
+        for mut trail in self.trails.iter_mut() {
+            if self.bounds.in_y(trail.head_y) {
+                self.leds[get_offset_index(self.bounds.height, trail.head_x, trail.head_y)] = self.params.color;
+            }
+            if advance {
+                if trail.head_y > trail.y_diag_start && self.bounds.in_x(trail.head_x as i32 + trail.x_dir) {
+                    trail.head_y += 0.5;
+                    trail.head_x = (trail.head_x as i32 + trail.x_dir) as usize;
+                } else {
+                    trail.head_y += 1.0;
+                }
+            }
+            if trail.head_y > (self.bounds.height + 10) as f32 {
+                reset = true;
+            }
+        }
+        if reset {
+            let y_diag = self.rng.gen_range(5.0, self.bounds.height as f32 - 10.0);
+            for mut trail in self.trails.iter_mut() {
+                // Reset eventually.
+                trail.head_y = if trail.head_x % 2 == 0 {0.0} else {0.5};
+                trail.x_dir *= -1;
+                trail.y_diag_start = y_diag;
+            }
+        }
+
+    }
+    fn length(&self) -> usize { self.leds.len() }
+    fn get(&self, index: usize) -> Color { self.leds[index] }
+    fn set_params(&mut self, params: PainterParams) { self.params = params; }
+}
+
 pub fn make_painter(width: usize, height: usize, params: PainterParams) -> Box<dyn Painter> {
     if params.painter == "hex" {
         return Box::new(HexPainter::new(width, height, params));
+    }
+    if params.painter == "line" {
+        return Box::new(LinePainter::new(width, height, params));
     }
     return Box::new(SweepPainter::new(width, height, params));
 }

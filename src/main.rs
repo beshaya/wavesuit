@@ -61,13 +61,12 @@ fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<painter::Pa
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut params = painter::PainterParams {
-        painter: String::from("hex"),
-        global_brightness: 1.0,
+        painter: String::from("line"),
+        global_brightness: 0.5,
         speed: 0.5,
         color: painter::Color::new(0xFFFFFF),
         secondary_colors: vec![
             painter::Color::new(0x4267B2),  // FB blue.
-            painter::Color::new(0xFF5000),  // red-orange.
             painter::Color::new(0x898F9C),  // FB grey.
         ]};
 
