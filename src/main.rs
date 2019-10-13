@@ -61,6 +61,7 @@ fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<painter::Pa
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut params = painter::PainterParams {
+        painter: String::from("hex"),
         global_brightness: 1.0,
         speed: 0.5,
         color: painter::Color::new(0xFFFFFF),
@@ -73,8 +74,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let ctrl_c_events = ctrl_channel()?;
     let webserver = rocket_channel(params.clone())?;
     params.apply_dimming();  // Apply dimming after caching the web version.
-    let ticks = tick(Duration::from_millis(30));
 
+    let ticks = tick(Duration::from_millis(30));
 
     let width: usize = 4;
     let height: usize = 30;
@@ -83,7 +84,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Remember to enable spi via raspi-config!
     let mut display = display::new(dots)?;
 
-    let mut arm_painter = painter::make_painter("hex", width, height, params);
+    let mut arm_painter = painter::make_painter(width, height, params.clone());
 
     loop {
         select! {
@@ -96,7 +97,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 display.show()?;
             }
             recv(webserver) -> new_params => {
-                arm_painter.set_params(new_params?);
+                let unwrapped = new_params?;
+                if unwrapped.painter != params.painter {
+                    arm_painter = painter::make_painter(width, height, unwrapped.clone());
+                } else {
+                    arm_painter.set_params(unwrapped.clone());
+                }
+                params = unwrapped;
             }
             recv(ctrl_c_events) -> _ => {
                 println!();

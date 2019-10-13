@@ -5,6 +5,7 @@ use serde_json;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PainterParams {
+    pub painter: String,
     pub global_brightness: f32,
     pub speed: f32,
     pub color: Color,
@@ -212,9 +213,8 @@ impl Painter for HexPainter {
     fn set_params(&mut self, params: PainterParams) { self.params = params; }
 }
 
-pub fn make_painter(painter_type: &str, width: usize, height: usize, params: PainterParams
-                    ) -> Box<dyn Painter> {
-    if painter_type == "hex" {
+pub fn make_painter(width: usize, height: usize, params: PainterParams) -> Box<dyn Painter> {
+    if params.painter == "hex" {
         return Box::new(HexPainter::new(width, height, params));
     }
     return Box::new(SweepPainter::new(width, height, params));
