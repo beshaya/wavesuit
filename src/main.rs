@@ -61,7 +61,7 @@ fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<painter::Pa
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut params = painter::PainterParams {
-        painter: String::from("line"),
+        painter: String::from("fade"),
         global_brightness: 0.5,
         speed: 0.5,
         color: painter::Color::new(0xFFFFFF),
@@ -72,6 +72,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let ctrl_c_events = ctrl_channel()?;
     let webserver = rocket_channel(params.clone())?;
+
     params.apply_dimming();  // Apply dimming after caching the web version.
 
     let ticks = tick(Duration::from_millis(30));

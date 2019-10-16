@@ -73,6 +73,7 @@ impl ops::MulAssign<f32> for Color {
     }
 }
 
+#[derive(Copy, Clone)]
 struct Bounds {
     height: usize,
     width: usize,
@@ -92,7 +93,7 @@ struct SweepPainter {
 }
 
 impl SweepPainter {
-    pub fn new(width: usize, height: usize, params: PainterParams) -> Self {
+    fn new(width: usize, height: usize, params: PainterParams) -> Self {
         return SweepPainter { height: height, width: width, params: params, leds: new_led_string(width * height), tick: 0 };
     }
 }
@@ -166,7 +167,7 @@ pub struct HexPainter {
 }
 
 impl HexPainter {
-    pub fn new(width: usize, height: usize, params: PainterParams) -> Self {
+    fn new(width: usize, height: usize, params: PainterParams) -> Self {
         return HexPainter { height: height, width: width, params: params,
                             leds: new_led_string(width * height), tick: 0, start_color_idx: 0};
     }
@@ -226,6 +227,41 @@ impl Painter for HexPainter {
     fn set_params(&mut self, params: PainterParams) { self.params = params; }
 }
 
+pub struct FadePainter {
+    bounds: Bounds,
+    params: PainterParams,
+    leds: LedString,
+    tick: f32,
+}
+
+impl FadePainter {
+    fn new(bounds: Bounds, params: PainterParams) -> Self {
+        return FadePainter { bounds: bounds, params: params, leds: new_led_string(bounds.width * bounds.height),
+                             tick: bounds.height as f32 };
+    }
+}
+impl Painter for FadePainter {
+    fn paint(&mut self) {
+        let length: f32 = 0.7;
+        for y in 0..self.bounds.height {
+            for x in 0..self.bounds.width {
+                let offset_y: f32 = (y as f32) + if x % 2 == 0 {0.0} else {0.5};
+                let index: f32 = ((self.tick - offset_y) / (self.bounds.height as f32) / length) %
+                    (self.params.secondary_colors.len() as f32);
+                let color: Color = self.params.secondary_colors[index as usize];
+                self.leds[get_offset_index(self.bounds.height, x, offset_y)] = color;
+            }
+        }
+        self.tick += self.params.speed;
+        if self.tick >= (self.bounds.height * self.params.secondary_colors.len()) as f32 * length * 2.0 {
+            self.tick -= (self.bounds.height * self.params.secondary_colors.len()) as f32 * length;
+        }
+    }
+    fn length(&self) -> usize { self.leds.len() }
+    fn get(&self, index: usize) -> Color { self.leds[index] }
+    fn set_params(&mut self, params: PainterParams) { self.params = params; }
+}
+
 struct Trail {
     head_x: usize,
     head_y: f32,
@@ -244,7 +280,7 @@ pub struct LinePainter {
 }
 
 impl LinePainter {
-    pub fn new(width: usize, height: usize, params: PainterParams) -> Self {
+    fn new(width: usize, height: usize, params: PainterParams) -> Self {
         let mut line = LinePainter { bounds: Bounds{height: height, width: width}, params: params,
                                      leds: new_led_string(width * height), tick: 0.0, start_color_idx: 0,
                                      trails: Vec::with_capacity(2), rng: rand::thread_rng()};
@@ -297,11 +333,15 @@ impl Painter for LinePainter {
 }
 
 pub fn make_painter(width: usize, height: usize, params: PainterParams) -> Box<dyn Painter> {
+    let bounds = Bounds { width: width, height: height };
     if params.painter == "hex" {
         return Box::new(HexPainter::new(width, height, params));
     }
     if params.painter == "line" {
         return Box::new(LinePainter::new(width, height, params));
+    }
+    if params.painter == "fade" {
+        return Box::new(FadePainter::new(bounds, params));
     }
     return Box::new(SweepPainter::new(width, height, params));
 }
