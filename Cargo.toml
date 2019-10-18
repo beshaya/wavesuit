@@ -6,6 +6,9 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+emulator = ["gtk", "cairo-rs", "gio"]
+
 [dependencies]
 signal-hook = "0.1.10"
 crossbeam-channel = "*"
@@ -13,6 +16,11 @@ rocket = "0.4.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rand = "*"
+
+# Dependencies for emulator
+gtk = { version = "0.7.0", features = ["v3_24"], optional = true }
+gio = { version = "^0", optional = true}
+cairo-rs = { version = "^0", optional = true}
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 blinkt = "0.5"

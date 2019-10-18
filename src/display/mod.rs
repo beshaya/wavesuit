@@ -1,7 +1,8 @@
 use std::error::Error;
 
-#[cfg_attr( not(target_arch = "arm"), path = "fake_display.rs")]
 #[cfg_attr( target_arch = "arm", path = "blinkt_display.rs")]
+#[cfg_attr( all(not(target_arch = "arm"), not(feature = "emulator")), path = "fake_display.rs")]
+#[cfg_attr(feature = "emulator", path = "emulator.rs")]
 mod display_impl;
 
 /**
