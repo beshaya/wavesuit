@@ -64,14 +64,15 @@ impl LedLayout {
 static mut LAYOUT: LedLayout = LedLayout{strips: Vec::new(), count: 0};
 
 // Based on https://github.com/gtk-rs/examples/blob/master/src/bin/cairotest.rs
-fn build_ui(application: &gtk::Application)
+fn build_ui<F>(application: &gtk::Application, core_alg: F)
+where F: Fn() -> () + 'static,
 {
     drawable(application, 500, 500, move |_, cr: &Context| {
         cr.scale(500f64, 500f64);
         cr.set_source_rgb(0.0, 0.0, 0.0);
         cr.rectangle(0.0, 0.0, 1.0, 1.0);
         cr.fill();
-
+        core_alg();
         unsafe {
             let mut led_index: usize = 0;
             for strip in LAYOUT.strips.iter() {
@@ -124,7 +125,7 @@ pub fn get_display(dots: usize) -> Result<Box<dyn Display>, Box<dyn Error>> {
 }
 
 pub fn run<F>(mut core_alg: F) -> Result<(), Box<dyn Error>>
-where F: FnMut() + 'static {
+where F: Fn() + 'static {
     unsafe {
         LAYOUT.add_strip(LedStrip{count: 30, x_start: 0.05, y_start: 0.05,
                                   x_spacing: 0.03, y_spacing: 0.0, backwards: false});
@@ -142,16 +143,17 @@ where F: FnMut() + 'static {
     )
         .expect("Initialization failed...");
 
-    application.connect_activate(|app| {
-        build_ui(app);
+    application.connect_activate(move |app| {
+        build_ui(app, core_alg);
     });
 
+    /*
     let tick = move || {
         core_alg();
         gtk::Continue(true)
     };
     gtk::timeout_add(30, tick);
-
+     */
     application.run(&Vec::new());
     Ok(())
 }
