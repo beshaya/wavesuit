@@ -47,7 +47,7 @@ struct Bounds {
 
 impl Bounds {
     pub fn in_x(&self, x: i32) -> bool {x >= 0 && x < (self.width as i32)}
-    pub fn in_y(&self, y: f32) -> bool {y >= 0.0 && y < self.height as f32 + 0.5}
+    pub fn in_y(&self, y: f32) -> bool {y >= 0.0 && y <= self.height as f32 - 0.5}
 }
 
 struct SweepPainter {

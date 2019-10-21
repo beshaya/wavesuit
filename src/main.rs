@@ -50,7 +50,7 @@ fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<painter::Pa
 fn main() -> Result<(), Box<dyn Error>> {
 
     let mut params = painter::PainterParams {
-        painter: String::from("fade"),
+        painter: String::from("line"),
         global_brightness: 0.5,
         speed: 0.5,
         color: Color::new(0xFFFFFF),

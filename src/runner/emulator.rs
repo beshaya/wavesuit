@@ -68,6 +68,9 @@ fn build_ui(application: &gtk::Application)
 {
     drawable(application, 500, 500, move |_, cr: &Context| {
         cr.scale(500f64, 500f64);
+        cr.set_source_rgb(0.0, 0.0, 0.0);
+        cr.rectangle(0.0, 0.0, 1.0, 1.0);
+        cr.fill();
 
         unsafe {
             let mut led_index: usize = 0;
