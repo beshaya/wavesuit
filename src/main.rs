@@ -13,6 +13,7 @@ use crossbeam_channel::{bounded, tick, Receiver, Sender, select};
 
 mod display;
 mod painter;
+mod runner;
 
 #[get("/")]
 fn get(params: State<Mutex<painter::PainterParams>>) -> content::Json<String> {
@@ -59,58 +60,81 @@ fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<painter::Pa
     Ok(receiver)
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let mut params = painter::PainterParams {
-        painter: String::from("fade"),
-        global_brightness: 0.5,
-        speed: 0.5,
-        color: painter::Color::new(0xFFFFFF),
-        secondary_colors: vec![
-            painter::Color::new(0x4267B2),  // FB blue.
-            painter::Color::new(0x898F9C),  // FB grey.
-        ]};
+struct CoreAlg {
+    params: painter::PainterParams,
+    webserver: Receiver<painter::PainterParams>,
+    width: usize,
+    height: usize,
+    dots: usize,
+    display: Box<dyn display::Display>,
+    arm_painter: Box<dyn painter::Painter>,
+}
 
-    let ctrl_c_events = ctrl_channel()?;
-    let webserver = rocket_channel(params.clone())?;
+impl CoreAlg {
+    fn new() -> Result<Self, Box<dyn Error>> {
+        let mut params = painter::PainterParams {
+            painter: String::from("fade"),
+            global_brightness: 0.5,
+            speed: 0.5,
+            color: painter::Color::new(0xFFFFFF),
+            secondary_colors: vec![
+                painter::Color::new(0x4267B2),  // FB blue.
+                painter::Color::new(0x898F9C),  // FB grey.
+            ]};
 
-    params.apply_dimming();  // Apply dimming after caching the web version.
+        //let ctrl_c_events = ctrl_channel()?;
+        let webserver = rocket_channel(params.clone())?;
 
-    let ticks = tick(Duration::from_millis(30));
+        params.apply_dimming();  // Apply dimming after caching the web version.
 
-    let width: usize = 4;
-    let height: usize = 30;
-    let dots: usize = width * height;
+        //let ticks = tick(Duration::from_millis(30));
 
-    // Remember to enable spi via raspi-config!
-    let mut display = display::new(dots)?;
+        let width: usize = 4;
+        let height: usize = 30;
+        let dots: usize = width * height;
 
-    let mut arm_painter = painter::make_painter(width, height, params.clone());
+        // Remember to enable spi via raspi-config!
+        let mut display = display::new(dots)?;
 
-    loop {
-        select! {
-            recv(ticks) -> _ => {
-                arm_painter.paint();
-                for i in 0..dots {
-                    let pixel = arm_painter.get(i);
-                    display.set_pixel(i, pixel.r, pixel.g, pixel.b);
-                }
-                display.show()?;
-            }
-            recv(webserver) -> new_params => {
-                let unwrapped = new_params?;
-                if unwrapped.painter != params.painter {
-                    arm_painter = painter::make_painter(width, height, unwrapped.clone());
+        let mut arm_painter = painter::make_painter(width, height, params.clone());
+        return Ok(CoreAlg {params: params, webserver: webserver, width: width, height: height,
+                           dots: dots, display: display, arm_painter: arm_painter});
+    }
+}
+
+impl runner::Runnable for CoreAlg {
+    fn run(&mut self) {
+        self.arm_painter.paint();
+        for i in 0..self.dots {
+            let pixel = self.arm_painter.get(i);
+            self.display.set_pixel(i, pixel.r, pixel.g, pixel.b);
+        }
+        match self.webserver.try_recv() {
+            Ok(new_params) => {
+                if new_params.painter != self.params.painter {
+                    self.arm_painter = painter::make_painter(self.width, self.height, new_params.clone());
                 } else {
-                    arm_painter.set_params(unwrapped.clone());
+                    self.arm_painter.set_params(new_params.clone());
                 }
-                params = unwrapped;
-            }
-            recv(ctrl_c_events) -> _ => {
-                println!();
-                println!("Goodbye");
-                break;
-            }
+                self.params = new_params;
+            },
+            Err(E) => {}
         }
     }
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+
+    let mut core_alg = Box::new(CoreAlg::new()?);
+
+    runner::run_impl::run(core_alg);
+
+
+    /*
+    recv(ctrl_c_events) -> _ => {
+        println!();
+        println!("Goodbye");
+        break;
+    }*/
     return Ok(());
 }
