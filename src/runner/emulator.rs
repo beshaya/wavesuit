@@ -2,7 +2,6 @@ extern crate gio;
 extern crate cairo;
 extern crate gtk;
 
-use std::env::args;
 use std::error::Error;
 use std::f64::consts::PI;
 
@@ -12,9 +11,57 @@ use gtk::DrawingArea;
 
 use cairo::Context;
 
-use crate::runner::Runnable;
+use crate::display::Display;
+use crate::color::Color;
 
-static mut x: f64 = 0.0;
+static mut LEDS: Vec<Color> = Vec::new();
+
+struct EmulatorDisplay {}
+
+impl Display for EmulatorDisplay {
+    fn set_pixel(&mut self, index: usize, r: u8, g: u8, b: u8) {
+        unsafe {
+            LEDS[index] = Color{r: r, g: g, b: b};
+        }
+    }
+
+    fn show(&mut self) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+}
+
+struct LedStrip {
+    count: usize,
+    x_start: f64,
+    y_start: f64,
+    x_spacing: f64,
+    y_spacing: f64,
+    backwards: bool,
+}
+
+struct LedLayout {
+    strips: Vec<LedStrip>,
+    count: usize,
+}
+
+impl LedLayout {
+    fn add_strip(&mut self, strip: LedStrip) {
+        self.count += strip.count;
+        if !strip.backwards {
+            self.strips.push(strip);
+            return;
+        }
+        let backwards_strip = LedStrip{count: strip.count,
+                                       x_start: strip.x_start + strip.x_spacing * (strip.count as f64 - 1.0),
+                                       y_start: strip.y_start + strip.y_spacing * (strip.count as f64 - 1.0),
+                                       x_spacing: -strip.x_spacing,
+                                       y_spacing: -strip.y_spacing,
+                                       backwards: false};
+        self.strips.push(backwards_strip);
+    }
+}
+
+static mut LAYOUT: LedLayout = LedLayout{strips: Vec::new(), count: 0};
 
 // Based on https://github.com/gtk-rs/examples/blob/master/src/bin/cairotest.rs
 fn build_ui(application: &gtk::Application)
@@ -23,10 +70,22 @@ fn build_ui(application: &gtk::Application)
         cr.scale(500f64, 500f64);
 
         unsafe {
-            cr.set_source_rgba(1.0, 0.2, 0.2, 0.6);
-            cr.arc(x, 0.53, 0.02, 0.0, PI * 2.);
-            cr.arc(0.27, 0.65, 0.02, 0.0, PI * 2.);
-            cr.fill();
+            let mut led_index: usize = 0;
+            for strip in LAYOUT.strips.iter() {
+                let mut x = strip.x_start;
+                let mut y = strip.y_start;
+                for _strip_index in 0..strip.count {
+                    let color = LEDS[led_index];
+                    cr.set_source_rgb(color.r as f64 / 255.0,
+                                       color.g as f64 / 255.0,
+                                       color.b as f64 / 255.0);
+                    cr.arc(x, y, 0.015, 0.0, PI * 2.);
+                    cr.fill();
+                    x += strip.x_spacing;
+                    y += strip.y_spacing;
+                    led_index += 1;
+                }
+            }
         }
         Inhibit(false)
     });
@@ -53,7 +112,26 @@ where
 
 }
 
-pub fn run(mut core_alg: Box<dyn Runnable>) {
+pub fn get_display(dots: usize) -> Result<Box<dyn Display>, Box<dyn Error>> {
+    unsafe {
+        LEDS.resize_with(dots, || {Color{r: 0, g: 0, b: 0}});
+    }
+    Ok(Box::new(EmulatorDisplay{}))
+}
+
+pub fn run<F>(mut core_alg: F) -> Result<(), Box<dyn Error>>
+where F: FnMut() + 'static {
+    unsafe {
+        LAYOUT.add_strip(LedStrip{count: 30, x_start: 0.05, y_start: 0.05,
+                                  x_spacing: 0.03, y_spacing: 0.0, backwards: false});
+        LAYOUT.add_strip(LedStrip{count: 30, x_start: 0.065, y_start: 0.08,
+                                  x_spacing: 0.03, y_spacing: 0.0, backwards: true});
+        LAYOUT.add_strip(LedStrip{count: 30, x_start: 0.05, y_start: 0.11,
+                                  x_spacing: 0.03, y_spacing: 0.0, backwards: false});
+        LAYOUT.add_strip(LedStrip{count: 30, x_start: 0.065, y_start: 0.14,
+                                  x_spacing: 0.03, y_spacing: 0.0, backwards: true});
+    }
+
     let application = gtk::Application::new(
         Some("com.github.gtk-rs.examples.cairotest"),
         Default::default(),
@@ -65,13 +143,11 @@ pub fn run(mut core_alg: Box<dyn Runnable>) {
     });
 
     let tick = move || {
-        core_alg.run();
-        unsafe {
-            x+= 0.001;
-        }
+        core_alg();
         gtk::Continue(true)
     };
     gtk::timeout_add(30, tick);
 
     application.run(&Vec::new());
+    Ok(())
 }
