@@ -24,5 +24,6 @@ impl Display for BlinktDisplay {
 }
 
 pub fn make_display(pixels: usize) -> Result<BlinktDisplay, Box<dyn Error>> {
+    println!("Using a blinkt display");
     Ok(BlinktDisplay {blinkt: Blinkt::with_spi(16_000_000, pixels)?})
 }

@@ -15,5 +15,6 @@ impl Display for FakeDisplay {
 }
 
 pub fn make_display(pixels: usize) -> Result<FakeDisplay, Box<dyn Error>> {
+    println!("Using a null display");
     Ok(FakeDisplay {pixels: pixels})
 }

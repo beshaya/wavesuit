@@ -113,6 +113,7 @@ where
 }
 
 pub fn get_display(dots: usize) -> Result<Box<dyn Display>, Box<dyn Error>> {
+    println!("Using an emulator display");
     unsafe {
         LEDS.resize_with(dots, || {Color{r: 0, g: 0, b: 0}});
     }

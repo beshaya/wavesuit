@@ -78,6 +78,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let pixel = arm_painter.get(i);
             display.set_pixel(i, pixel.r, pixel.g, pixel.b);
         }
+        display.show();
         match webserver.try_recv() {
             Ok(new_params) => {
                 if new_params.painter != params.painter {
