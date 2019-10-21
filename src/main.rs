@@ -1,15 +1,9 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-#[macro_use] extern crate rocket;
-use rocket::State;
-use rocket::response::content;
+use std::error::Error;
 
-use std::{error::Error, thread};
-use std::sync::{Mutex};
+use base::Color;
+use base::PainterParams;
+use base::rocket_server;
 
-use crossbeam_channel::{bounded, Receiver, Sender};
-
-mod color;
-use crate::color::Color;
 mod display;
 mod painter;
 
@@ -17,39 +11,10 @@ mod painter;
 #[cfg_attr(not(feature = "emulator"), path = "runner/default_runner.rs")]
 pub mod runner;
 
-#[get("/")]
-fn get(params: State<Mutex<painter::PainterParams>>) -> content::Json<String> {
-    let data = params.lock().unwrap();
-    content::Json(data.serialize())
-}
-
-#[post("/", format = "application/json", data = "<json_params>")]
-fn post(json_params: String,
-        params: State<Mutex<painter::PainterParams>>,
-        sender: State<Sender<painter::PainterParams>>) -> Result<(), Box<dyn Error>> {
-    let mut new_params = painter::PainterParams::deserialize(&json_params)?;
-    let mut old_params = params.lock().unwrap();
-    *old_params = new_params.clone();
-    new_params.apply_dimming();
-    sender.send(new_params).unwrap();
-    Ok(())
-}
-
-fn rocket_channel(params: painter::PainterParams) -> Result<Receiver<painter::PainterParams>, Box<dyn Error>> {
-    let (sender, receiver) = bounded::<painter::PainterParams>(5);
-    thread::spawn(move || {
-        rocket::ignite()
-            .manage(Mutex::new(params))
-            .manage(sender)
-            .mount("/", routes![get, post]).launch();
-    });
-
-    Ok(receiver)
-}
 
 fn main() -> Result<(), Box<dyn Error>> {
 
-    let mut params = painter::PainterParams {
+    let mut params = PainterParams {
         painter: String::from("line"),
         global_brightness: 0.5,
         speed: 0.5,
@@ -59,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Color::new(0x898F9C),  // FB grey.
         ]};
 
-    let webserver = rocket_channel(params.clone())?;
+    let webserver = rocket_server(params.clone())?;
 
     params.apply_dimming();  // Apply dimming after caching the web version.
 

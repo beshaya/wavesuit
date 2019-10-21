@@ -12,7 +12,7 @@ use gtk::DrawingArea;
 use cairo::Context;
 
 use crate::display::Display;
-use crate::color::Color;
+use base::Color;
 
 static mut LEDS: Vec<Color> = Vec::new();
 
