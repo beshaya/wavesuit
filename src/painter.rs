@@ -294,12 +294,11 @@ impl Painter for Raindrops {
     fn get(&self, index: usize) -> Color { self.leds[index] }
     fn set_params(&mut self, params: PainterParams) { self.params = params; }
     fn paint(&mut self) {
-        let fade: f32 = 0.85;
         // Advance on integers.
         let advance: bool = self.tick.floor() < (self.tick + self.params.speed).floor();
         self.tick += self.params.speed;
         for idx in 0..self.leds.len() {
-            self.leds[idx] *= fade;
+            self.leds[idx] *= self.params.fade;
         }
         for mut trail in self.trails.iter_mut() {
             if self.bounds.in_y(trail.head_y) {

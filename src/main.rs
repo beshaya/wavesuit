@@ -22,7 +22,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         secondary_colors: vec![
             Color::new(0x4267B2),  // FB blue.
             Color::new(0x898F9C),  // FB grey.
-        ]};
+        ],
+        fade: 0.7,
+    };
 
     let webserver = rocket_server(params.clone())?;
 

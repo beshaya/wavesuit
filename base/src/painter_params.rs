@@ -12,6 +12,7 @@ pub struct PainterParams {
     pub speed: f32,
     pub color: Color,
     pub secondary_colors: Vec<Color>,
+    pub fade: f32,
 }
 
 impl PainterParams {
