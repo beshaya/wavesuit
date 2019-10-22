@@ -265,6 +265,56 @@ impl Painter for LinePainter {
     fn set_params(&mut self, params: PainterParams) { self.params = params; }
 }
 
+struct Raindrops {
+    bounds: Bounds,
+    params: PainterParams,
+    leds: LedString,
+    tick: f32,
+    start_color_idx: usize,
+    trails: Vec<Trail>,
+    rng: ThreadRng,
+}
+
+impl Raindrops {
+    fn new(bounds: Bounds, params: PainterParams) -> Self {
+        let mut trails = Vec::with_capacity(12);
+        let mut rng = rand::thread_rng();
+        trails.resize_with(5, || {
+            Trail {head_x: rng.gen_range(0, bounds.width -1 ), head_y: rng.gen_range(-1 * (bounds.height as i32), 0) as f32,
+                   x_dir: 0, y_diag_start: 0.0}});
+
+        return Raindrops { bounds: bounds, params: params,
+                                   leds: new_led_string(bounds.width * bounds.height), tick: 0.0, start_color_idx: 0,
+                                   trails: trails, rng: rng};
+    }
+}
+
+impl Painter for Raindrops {
+    fn length(&self) -> usize { self.leds.len() }
+    fn get(&self, index: usize) -> Color { self.leds[index] }
+    fn set_params(&mut self, params: PainterParams) { self.params = params; }
+    fn paint(&mut self) {
+        let fade: f32 = 0.85;
+        // Advance on integers.
+        let advance: bool = self.tick.floor() < (self.tick + self.params.speed).floor();
+        self.tick += self.params.speed;
+        for idx in 0..self.leds.len() {
+            self.leds[idx] *= fade;
+        }
+        for mut trail in self.trails.iter_mut() {
+            if self.bounds.in_y(trail.head_y) {
+                self.leds[get_index(self.bounds.height, trail.head_x, trail.head_y as usize)] = self.params.color;
+            }
+            if advance {
+                trail.head_y += 1.0;
+            }
+            if trail.head_y > (self.bounds.height + 10) as f32 {
+                trail.head_y = self.rng.gen_range(-1 * (self.bounds.height as i32), 0) as f32
+            }
+        }
+    }
+}
+
 pub fn make_painter(width: usize, height: usize, params: PainterParams) -> Box<dyn Painter> {
     let bounds = Bounds { width: width, height: height };
     if params.painter == "hex" {
@@ -275,6 +325,9 @@ pub fn make_painter(width: usize, height: usize, params: PainterParams) -> Box<d
     }
     if params.painter == "fade" {
         return Box::new(FadePainter::new(bounds, params));
+    }
+    if params.painter == "rain" {
+        return Box::new(Raindrops::new(bounds, params));
     }
     return Box::new(SweepPainter::new(width, height, params));
 }

@@ -15,7 +15,7 @@ pub mod runner;
 fn main() -> Result<(), Box<dyn Error>> {
 
     let mut params = PainterParams {
-        painter: String::from("line"),
+        painter: String::from("rain"),
         global_brightness: 0.5,
         speed: 0.5,
         color: Color::new(0xFFFFFF),

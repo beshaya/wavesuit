@@ -1,4 +1,5 @@
-{"painter":"line","global_brightness":0.5,"speed":0.4,"color":{"r":253,"g":253,"b":253},"secondary_colors":[{"r":3,"g":8,"b":46},{"r":253,"g":4,"b":0},{"r":18,"g":21,"b":28}]}
+{painter:line,global_brightness:0.5,speed:0.4,color:{r:253,g:253,b:253},secondary_colors:[{r:3,g:8,b:46},{r:253,g:4,b:0},{r:18,g:21,b:28}]}
 
 
-{"painter":"fade","global_brightness":0.5,"speed":0.4,"color":{"r":253,"g":253,"b":253},"secondary_colors":[{"r":255,"g":8,"b":46},{"r":128,"g":4,"b":128},{"r":80,"g":21,"b":120}]}
+{painter:fade,global_brightness:0.5,speed:0.4,color:{r:253,g:253,b:253},secondary_colors:[{r:255,g:8,b:46},{r:128,g:4,b:128},{r:80,g:21,b:120}]}
+{painter:fade,global_brightness:1.0,speed:0.5,color:{r:255,g:255,b:255},secondary_colors:[{r:66,g:103,b:178},{r:255,g:32,b:197},{r:137,g:143,b:156},{r:0,g:195,b:195}]}
