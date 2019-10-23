@@ -279,8 +279,8 @@ impl Raindrops {
     fn new(bounds: Bounds, params: PainterParams) -> Self {
         let mut trails = Vec::with_capacity(12);
         let mut rng = rand::thread_rng();
-        trails.resize_with(5, || {
-            Trail {head_x: rng.gen_range(0, bounds.width -1 ), head_y: rng.gen_range(-1 * (bounds.height as i32), 0) as f32,
+        trails.resize_with(8, || {
+            Trail {head_x: rng.gen_range(0, bounds.width), head_y: rng.gen_range(-1 * (bounds.height as i32), 0) as f32,
                    x_dir: 0, y_diag_start: 0.0}});
 
         return Raindrops { bounds: bounds, params: params,
@@ -308,7 +308,8 @@ impl Painter for Raindrops {
                 trail.head_y += 1.0;
             }
             if trail.head_y > (self.bounds.height + 10) as f32 {
-                trail.head_y = self.rng.gen_range(-1 * (self.bounds.height as i32), 0) as f32
+                trail.head_y = self.rng.gen_range(-1 * (self.bounds.height as i32), 0) as f32;
+                trail.head_x = self.rng.gen_range(0, self.bounds.width);
             }
         }
     }
