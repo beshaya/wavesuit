@@ -1,1 +1,1 @@
-{"painter":"hex","global_brightness":0.5,"speed":0.5,"color":{"r":255,"g":255,"b":255},"secondary_colors":[{"r":66,"g":103,"b":178},{"r":137,"g":143,"b":156},{"r":200,"g":0,"b":0}],"fade":0.95,"bidirectional":true}
+{"painter":"rain","global_brightness":0.5,"speed":0.5,"color":{"r":255,"g":255,"b":255},"secondary_colors":[{"r":0,"g":0,"b":178},{"r":30,"g":20,"b":156},{"r":200,"g":0,"b":0}],"fade":0.7,"bidirectional":true}
