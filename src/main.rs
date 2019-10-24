@@ -14,16 +14,23 @@ pub mod runner;
 
 fn main() -> Result<(), Box<dyn Error>> {
 
-    let mut params = PainterParams {
-        painter: String::from("rain"),
-        global_brightness: 0.5,
-        speed: 0.5,
-        color: Color::new(0xFFFFFF),
-        secondary_colors: vec![
-            Color::new(0x4267B2),  // FB blue.
-            Color::new(0x898F9C),  // FB grey.
-        ],
-        fade: 0.7,
+    let mut params = match PainterParams::load() {
+        Ok(loaded_params) => loaded_params,
+        Err(e) => {
+            println!("Unable to load from file: {}", e);
+            PainterParams {
+                painter: String::from("rain"),
+                global_brightness: 0.5,
+                speed: 0.5,
+                color: Color::new(0xFFFFFF),
+                secondary_colors: vec![
+                    Color::new(0x4267B2),  // FB blue.
+                    Color::new(0x898F9C),  // FB grey.
+                ],
+                fade: 0.7,
+                bidirectional: true,
+            }
+        }
     };
 
     let webserver = rocket_server(params.clone())?;
@@ -31,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     params.apply_dimming();  // Apply dimming after caching the web version.
 
     let width: usize = 4;
-    let height: usize = 30;
+    let height: usize = 22;
     let dots: usize = width * height;
 
     // Remember to enable spi via raspi-config!

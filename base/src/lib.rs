@@ -25,6 +25,10 @@ fn post(json_params: String,
     let mut new_params = PainterParams::deserialize(&json_params)?;
     let mut old_params = params.lock().unwrap();
     *old_params = new_params.clone();
+    match new_params.save() {
+        Err(e) => println!("Error writing to file: {}", e),
+        Ok(()) => {}
+    }
     new_params.apply_dimming();
     sender.send(new_params).unwrap();
     Ok(())

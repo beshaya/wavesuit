@@ -126,14 +126,14 @@ pub fn get_display(dots: usize) -> Result<Box<dyn Display>, Box<dyn Error>> {
 pub fn run<F>(mut core_alg: F) -> Result<(), Box<dyn Error>>
 where F: FnMut() + 'static {
     unsafe {
-        LAYOUT.add_strip(LedStrip{count: 30, x_start: 0.05, y_start: 0.05,
-                                  x_spacing: 0.03, y_spacing: 0.0, backwards: false});
-        LAYOUT.add_strip(LedStrip{count: 30, x_start: 0.065, y_start: 0.08,
+        LAYOUT.add_strip(LedStrip{count: 22, x_start: 0.065, y_start: 0.14,
                                   x_spacing: 0.03, y_spacing: 0.0, backwards: true});
-        LAYOUT.add_strip(LedStrip{count: 30, x_start: 0.05, y_start: 0.11,
+        LAYOUT.add_strip(LedStrip{count: 22, x_start: 0.05, y_start: 0.11,
                                   x_spacing: 0.03, y_spacing: 0.0, backwards: false});
-        LAYOUT.add_strip(LedStrip{count: 30, x_start: 0.065, y_start: 0.14,
+        LAYOUT.add_strip(LedStrip{count: 22, x_start: 0.065, y_start: 0.08,
                                   x_spacing: 0.03, y_spacing: 0.0, backwards: true});
+        LAYOUT.add_strip(LedStrip{count: 22, x_start: 0.05, y_start: 0.05,
+                                  x_spacing: 0.03, y_spacing: 0.0, backwards: false});
     }
 
     let application = gtk::Application::new(
