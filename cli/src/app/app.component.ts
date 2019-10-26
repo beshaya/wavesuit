@@ -40,6 +40,7 @@ export class AppComponent  {
     {id: "pulse", text: "Pulse"},
     {id: "rain", text: "Rain"},
     {id: "fade", text: "Fade"},
+    {id: "disco", text: "Disco"},
   ];
 
   constructor(

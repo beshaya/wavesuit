@@ -19,6 +19,7 @@ struct Bounds {
 }
 
 impl Bounds {
+    pub fn size(&self) -> usize { self.height * self.width }
     pub fn in_x(&self, x: i32) -> bool {x >= 0 && x < (self.width as i32)}
     pub fn in_y(&self, y: f32) -> bool {y >= 0.0 && y <= self.height as f32 - 0.5}
     pub fn in_(&self, x: i32, y: f32) -> bool {self.in_x(x) && self.in_y(y)}
@@ -109,6 +110,14 @@ type LedString = Vec<Color>;
 fn fade_all(leds: &mut LedString, fade_multiplier: f32) {
     for i in 0..leds.len() {
         leds[i] *= fade_multiplier;
+    }
+}
+
+fn fill_every_other(parity: usize, color: Color, leds: &mut LedString) {
+    for i in 0..leds.len() {
+        if i % 2 == parity {
+            leds[i] = color;
+        }
     }
 }
 
@@ -256,9 +265,7 @@ impl Painter for LinePainter {
         // Advance on integers.
         let advance: bool = self.tick.floor() < (self.tick + self.params.speed).floor();
         self.tick += self.params.speed;
-        for idx in 0..self.leds.len() {
-            self.leds[idx] *= fade;
-        }
+        fade_all(&mut self.leds, self.params.fade);
         let mut reset = false;
         for mut trail in self.trails.iter_mut() {
             if self.bounds.in_(trail.head_x, trail.head_y) {
@@ -347,6 +354,51 @@ impl Painter for Raindrops {
     }
 }
 
+struct Disco {
+    bounds: Bounds,
+    params: PainterParams,
+    leds: LedString,
+    tick: f64,
+    last_beat: f64,
+}
+
+impl Disco {
+    fn new(bounds: Bounds, mut params: PainterParams) -> Self {
+        if params.secondary_colors.len() < 1 {
+            params.secondary_colors.push(Color::new(0xFF0000));
+        }
+        if params.secondary_colors.len() < 2 {
+            params.secondary_colors.push(Color::new(0x0000FF));
+        }
+        Disco { bounds: bounds, params: params, leds: new_led_string(bounds.size()), tick: 0.0,
+                last_beat: 0.0}
+    }
+}
+
+impl Painter for Disco {
+    fn length(&self) -> usize { self.leds.len() }
+    fn get(&self, index: usize) -> Color { self.leds[index] }
+    fn set_params(&mut self, params: PainterParams) { self.params = params; }
+
+    fn paint(&mut self) {
+        let bpm: f64 = (self.params.speed * 130.0).into();  // normalize to 130 bpm
+        let bps: f64 = bpm / 60.0;
+        let counts: f64 = 2.0;
+        let second: f64 = self.tick * 0.03;
+        let beat: f64 = bps * second;
+        fade_all(&mut self.leds, self.params.fade);
+        if self.last_beat.floor() != beat.floor() {
+            let color_index: usize = (beat.floor() as usize) % self.params.secondary_colors.len();
+            fill_every_other((beat.floor() as usize) % 2,
+                           self.params.secondary_colors[color_index],
+                           &mut self.leds);
+        }
+
+        self.last_beat = beat;
+        self.tick += 1.0;
+    }
+}
+
 pub fn make_painter(width: usize, height: usize, params: PainterParams) -> Box<dyn Painter> {
     let bounds = Bounds { width: width, height: height };
     if params.painter == "hex" {
@@ -360,6 +412,9 @@ pub fn make_painter(width: usize, height: usize, params: PainterParams) -> Box<d
     }
     if params.painter == "rain" {
         return Box::new(Raindrops::new(bounds, params));
+    }
+    if params.painter == "disco" {
+        return Box::new(Disco::new(bounds, params));
     }
     return Box::new(SweepPainter::new(width, height, params));
 }

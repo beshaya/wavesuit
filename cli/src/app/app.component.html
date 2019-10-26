@@ -18,7 +18,7 @@
   </div>
   <div>
     <mat-label>Pattern</mat-label>
-    <mat-select formControlName="painter">
+    <mat-select disableOptionCentering formControlName="painter">
       <mat-option *ngFor="let painter of painters" [value]="painter.id">
         {{painter.text}}
       </mat-option>
