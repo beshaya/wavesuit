@@ -5,3 +5,17 @@ p {
 .save {
   padding-top: 20px
 }
+
+.color-container {
+    display: flex;
+    flex-direction: row;
+    height: 30px;
+}
+
+.remove-container {
+    width: 20px;
+}
+
+.color-meta {
+    padding-bottom: 20px;
+}

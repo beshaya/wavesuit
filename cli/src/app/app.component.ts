@@ -31,16 +31,15 @@ const httpOptions = {
 })
 export class AppComponent  {
   form: FormGroup;
-  painterParams: PainterParams;
-
+  private initialParams: PainterParams;
   private server: string = "/api";
 
   painters = [
-    {value: "hex", viewValue: "Hex"},
-    {value: "line", viewValue: "Line"},
-    {value: "pulse", viewValue: "Pulse"},
-    {value: "rain", viewValue: "Rain"},
-    {value: "fade", viewValue: "Fade"},
+    {id: 'hex', text: "Hex"},
+    {id: "line", text: "Line"},
+    {id: "pulse", text: "Pulse"},
+    {id: "rain", text: "Rain"},
+    {id: "fade", text: "Fade"},
   ];
 
   constructor(
@@ -61,7 +60,10 @@ export class AppComponent  {
         fade: [data.fade],
         bidirectional: [data.bidirectional]
       });
-      this.painterParams = data;
+      this.initialParams = data;
+      this.form.valueChanges.subscribe((val: PainterParams) => {
+        this.write(val);
+      });
     });
   }
 
@@ -76,17 +78,23 @@ export class AppComponent  {
     })
   }
 
-  save() {
-    console.log("Save");
-    console.log(this.form.value);
+  addColor() {
+    (this.form.controls['secondary_colors'] as FormArray).push(this.colorGroup());
+  }
+
+  removeColor(index: number) {
+    (this.form.controls['secondary_colors'] as FormArray).removeAt(index);
+  }
+
+  private write(val: PainterParams) {
     this.http.post(this.server, this.form.value, httpOptions)
       .subscribe((response) => console.log(response));
   }
 
-  load() {
-    this.http.get(this.server).subscribe((data: PainterParams) => {
-      this.painterParams = data;
+  save() {
+  }
 
-    });
+  load() {
+    this.form.setValue(this.initialParams);
   }
 }

@@ -1,10 +1,26 @@
 <form *ngIf=form [formGroup]=form>
+  <div class="color-meta">
+    <div *ngIf="form.controls['color']" class="color-container first-color">
+      <div class="remove-container"></div>
+      <wave-color-picker [form]="form.controls['color']"></wave-color-picker>
+    </div>
+    <div *ngFor="let control of form.controls['secondary_colors'].controls; let i = index"
+         class="color-container">
+      <div class="remove-container">
+        <button (click)="removeColor(i)">-</button>
+      </div>
+      <wave-color-picker [form]="control"></wave-color-picker>
+    </div>
+    <div class="color-container">
+      <div class="remove-container"></div>
+      <button mat-raised-button (click)="addColor()">+</button>
+    </div>
+  </div>
   <div>
     <mat-label>Pattern</mat-label>
     <mat-select formControlName="painter">
-
-      <mat-option *ngFor="let painter of painters" [value]="painter.value">
-        {{painter.viewValue}}
+      <mat-option *ngFor="let painter of painters" [value]="painter.id">
+        {{painter.text}}
       </mat-option>
     </mat-select>
   </div>
@@ -15,12 +31,12 @@
   </div>
   <div>
     Speed
-    <mat-slider formControlName="speed" min="0" max="1" step="0.1"></mat-slider>
+    <mat-slider formControlName="speed" min="0.3" max="1" step="0.05"></mat-slider>
     {{form.value.speed}}
   </div>
   <div>
     Fade
-    <mat-slider formControlName="fade" min="0" max="1" step="0.1"></mat-slider>
+    <mat-slider formControlName="fade" min="0.3" max="1" step="0.05"></mat-slider>
     {{form.value.fade}}
   </div>
   <div>
