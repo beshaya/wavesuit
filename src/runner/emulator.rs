@@ -59,6 +59,19 @@ impl LedLayout {
                                        backwards: false};
         self.strips.push(backwards_strip);
     }
+    fn add_offset_panel(&mut self, mut orig_x: f64, mut orig_y: f64,
+                        strip_x: f64, strip_y: f64, strip_len: usize,
+                        panel_x: f64, panel_y: f64, panel_len: usize) {
+        let mut backwards = false;
+        for i in 0..panel_len {
+            self.add_strip(LedStrip{count: strip_len, x_start: orig_x, y_start: orig_y,
+                                    x_spacing: strip_x, y_spacing: strip_y, backwards: backwards});
+            orig_x += panel_x;
+            orig_y += panel_y;
+            // todo: offset
+            backwards = !backwards;
+        }
+    }
 }
 
 static mut LAYOUT: LedLayout = LedLayout{strips: Vec::new(), count: 0};
@@ -82,7 +95,7 @@ fn build_ui(application: &gtk::Application)
                     cr.set_source_rgb(color.r as f64 / 255.0,
                                        color.g as f64 / 255.0,
                                        color.b as f64 / 255.0);
-                    cr.arc(x, y, 0.015, 0.0, PI * 2.);
+                    cr.arc(x, y, 0.007, 0.0, PI * 2.);
                     cr.fill();
                     x += strip.x_spacing;
                     y += strip.y_spacing;
@@ -126,14 +139,18 @@ pub fn get_display(dots: usize) -> Result<Box<dyn Display>, Box<dyn Error>> {
 pub fn run<F>(mut core_alg: F) -> Result<(), Box<dyn Error>>
 where F: FnMut() + 'static {
     unsafe {
-        LAYOUT.add_strip(LedStrip{count: 22, x_start: 0.065, y_start: 0.14,
-                                  x_spacing: 0.03, y_spacing: 0.0, backwards: true});
-        LAYOUT.add_strip(LedStrip{count: 22, x_start: 0.05, y_start: 0.11,
-                                  x_spacing: 0.03, y_spacing: 0.0, backwards: false});
-        LAYOUT.add_strip(LedStrip{count: 22, x_start: 0.065, y_start: 0.08,
-                                  x_spacing: 0.03, y_spacing: 0.0, backwards: true});
-        LAYOUT.add_strip(LedStrip{count: 22, x_start: 0.05, y_start: 0.05,
-                                  x_spacing: 0.03, y_spacing: 0.0, backwards: false});
+        // Back
+        let unit: f64 = 1.0 / 46.0;
+        LAYOUT.add_offset_panel(0.5 + unit * 12.0 /* orig_x */, unit * 4.0 /* orig_y */,
+                                0.0 /* strip_x */, unit /* strip_y */, 30 /* strip_len */,
+                                -unit /* panel_x */, 0.0 /* panel_y */, 8 /* panel_len */);
+        LAYOUT.add_offset_panel(0.5 - unit * 4.0 /* orig_x */, unit * 4.0 /* orig_y */,
+                                0.0 /* strip_x */, unit /* strip_y */, 30 /* strip_len */,
+                                -unit /* panel_x */, 0.0 /* panel_y */, 8 /* panel_len */);
+        // Belt
+        LAYOUT.add_offset_panel(0.5 - unit * 10.0 /* orig_x */, 1.0 - unit * 5.0 /* orig_y */,
+                                unit /* strip_x */, 0.0 /* strip_y */, 22 /* strip_len */,
+                                0.0 /* panel_x */, -unit /* panel_y */, 4 /* panel_len */);
     }
 
     let application = gtk::Application::new(

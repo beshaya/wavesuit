@@ -13,9 +13,9 @@ pub trait Painter {
 }
 
 #[derive(Copy, Clone)]
-struct Bounds {
-    height: usize,
-    width: usize,
+pub struct Bounds {
+    pub height: usize,
+    pub width: usize,
 }
 
 impl Bounds {

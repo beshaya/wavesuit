@@ -39,26 +39,38 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let width: usize = 4;
     let height: usize = 22;
-    let dots: usize = width * height;
+    let back_height: usize = 30;
+    let back_width: usize = 16;
+    let dots: usize = width * height + back_height * back_width;
 
     // Remember to enable spi via raspi-config!
     let mut display = runner::get_display(dots)?;
 
-    let mut arm_painter = painter::make_painter(width, height, params.clone());
+    let mut painters = vec![
+        painter::make_painter(back_width, back_height, params.clone()),
+        painter::make_painter(width, height, params.clone()),
+    ];
 
     runner::run(move || {
-        arm_painter.paint();
-        for i in 0..dots {
-            let pixel = arm_painter.get(i);
-            display.set_pixel(i, pixel.r, pixel.g, pixel.b);
+        let mut led: usize = 0;
+        for painter in painters.iter_mut() {
+            painter.paint();
+            for pix in 0..painter.length() {
+                let pixel = painter.get(pix);
+                display.set_pixel(led, pixel.r, pixel.g, pixel.b);
+                led += 1;
+            }
         }
         display.show();
         match webserver.try_recv() {
             Ok(new_params) => {
                 if new_params.painter != params.painter {
-                    arm_painter = painter::make_painter(width, height, new_params.clone());
+                    painters[0] = painter::make_painter(back_width, back_height, new_params.clone());
+                    painters[1] = painter::make_painter(width, height, params.clone());
                 } else {
-                    arm_painter.set_params(new_params.clone());
+                    for painter in painters.iter_mut() {
+                        painter.set_params(new_params.clone());
+                    }
                 }
                 params = new_params;
             },
