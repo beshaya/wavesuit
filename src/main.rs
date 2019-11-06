@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     params.apply_dimming();  // Apply dimming after caching the web version.
 
     let width: usize = 4;
-    let height: usize = 22;
+    let height: usize = 30;
     let back_height: usize = 30;
     let back_width: usize = 16;
     let dots: usize = width * height + back_height * back_width;
@@ -66,7 +66,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Ok(new_params) => {
                 if new_params.painter != params.painter {
                     painters[0] = painter::make_painter(back_width, back_height, new_params.clone());
-                    painters[1] = painter::make_painter(width, height, params.clone());
+                    painters[1] = painter::make_painter(width, height, new_params.clone());
                 } else {
                     for painter in painters.iter_mut() {
                         painter.set_params(new_params.clone());
