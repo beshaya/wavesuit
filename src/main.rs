@@ -19,16 +19,21 @@ fn main() -> Result<(), Box<dyn Error>> {
         Err(e) => {
             println!("Unable to load from file: {}", e);
             PainterParams {
-                painter: String::from("rain"),
+                painter: String::from("hex"),
                 global_brightness: 0.5,
-                speed: 0.5,
+                speed: 0.8,
                 color: Color::new(0xFFFFFF),
                 secondary_colors: vec![
                     Color::new(0x4267B2),  // FB blue.
                     Color::new(0x898F9C),  // FB grey.
+                    Color::new(0xAC0000),
+                    Color::new(0x8A8A00),
+                    Color::new(0x8A008A),
                 ],
-                fade: 0.7,
+                fade: 0.9,
                 bidirectional: true,
+                fade_after: true,
+                color_index: 0,
             }
         }
     };

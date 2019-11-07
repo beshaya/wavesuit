@@ -16,9 +16,14 @@ pub struct PainterParams {
     pub secondary_colors: Vec<Color>,
     pub fade: f32,
     pub bidirectional: bool,
+    pub fade_after: bool,
+    #[serde(skip)]
+    pub color_index: usize,  // Shouldn't be public but w/e.
+
 }
 
 impl PainterParams {
+
     pub fn serialize(&self) -> String {
         return serde_json::to_string(self).unwrap();
     }
@@ -43,5 +48,9 @@ impl PainterParams {
         let mut file = File::create("last_params.json")?;
         file.write_all(contents.as_bytes())?;
         Ok(())
+    }
+    pub fn next_color(&mut self) -> Color {
+        self.color_index = (self.color_index + 1) % self.secondary_colors.len();
+        self.secondary_colors[self.color_index]
     }
 }

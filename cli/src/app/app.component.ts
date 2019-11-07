@@ -16,6 +16,7 @@ interface PainterParams {
   secondary_colors: Color[],
   fade: number,
   bidirectional: boolean,
+  fade_after: boolean,
 }
 
 const httpOptions = {
@@ -59,7 +60,8 @@ export class AppComponent  {
           data.secondary_colors.map((c: Color) => this.colorGroup(c))
         ),
         fade: [data.fade],
-        bidirectional: [data.bidirectional]
+        bidirectional: [data.bidirectional],
+        fade_after: [data.fade_after],
       });
       this.initialParams = data;
       this.form.valueChanges.subscribe((val: PainterParams) => {

@@ -63,13 +63,21 @@ impl LedLayout {
                         strip_x: f64, strip_y: f64, strip_len: usize,
                         panel_x: f64, panel_y: f64, panel_len: usize) {
         let mut backwards = false;
-        for i in 0..panel_len {
+        for _i in 0..panel_len {
             self.add_strip(LedStrip{count: strip_len, x_start: orig_x, y_start: orig_y,
                                     x_spacing: strip_x, y_spacing: strip_y, backwards: backwards});
             orig_x += panel_x;
             orig_y += panel_y;
-            // todo: offset
+
+            // Add offset:
             backwards = !backwards;
+            if backwards {
+                orig_x += strip_x / 2.0;
+                orig_y += strip_y / 2.0;
+            } else {
+                orig_x -= strip_x / 2.0;
+                orig_y -= strip_y / 2.0;
+            }
         }
     }
 }
@@ -124,7 +132,7 @@ where
         drawing_area.queue_draw_area(0, 0, 500, 500);
         gtk::Continue(true)
     };
-    gtk::timeout_add(30, tick);
+    gtk::timeout_add(42, tick);
 
 }
 
@@ -141,16 +149,22 @@ where F: FnMut() + 'static {
     unsafe {
         // Back
         let unit: f64 = 1.0 / 46.0;
-        LAYOUT.add_offset_panel(0.5 + unit * 12.0 /* orig_x */, unit * 4.0 /* orig_y */,
+        LAYOUT.add_offset_panel(0.5 + unit * 9.0 /* orig_x */, unit * 4.0 /* orig_y */,
                                 0.0 /* strip_x */, unit /* strip_y */, 30 /* strip_len */,
                                 -unit /* panel_x */, 0.0 /* panel_y */, 8 /* panel_len */);
-        LAYOUT.add_offset_panel(0.5 - unit * 4.0 /* orig_x */, unit * 4.0 /* orig_y */,
+        LAYOUT.add_offset_panel(0.5 - unit * 1.0 /* orig_x */, unit * 4.0 /* orig_y */,
                                 0.0 /* strip_x */, unit /* strip_y */, 30 /* strip_len */,
                                 -unit /* panel_x */, 0.0 /* panel_y */, 8 /* panel_len */);
+
+        LAYOUT.add_offset_panel(unit * 7.0 /* orig_x */, unit * 4.0 /* orig_y */,
+                                0.0 /* strip_x */, unit /* strip_y */, 30 /* strip_len */,
+                                -unit /*panel_x */, 0.0 /* panel_y */ , 4 /* panel_len */);
         // Belt
+        /*
         LAYOUT.add_offset_panel(0.5 - unit * 10.0 /* orig_x */, 1.0 - unit * 5.0 /* orig_y */,
                                 unit /* strip_x */, 0.0 /* strip_y */, 22 /* strip_len */,
                                 0.0 /* panel_x */, -unit /* panel_y */, 4 /* panel_len */);
+         */
     }
 
     let application = gtk::Application::new(
@@ -167,7 +181,7 @@ where F: FnMut() + 'static {
         core_alg();
         gtk::Continue(true)
     };
-    gtk::timeout_add(30, tick);
+    gtk::timeout_add(42, tick);
 
     application.run(&Vec::new());
     Ok(())

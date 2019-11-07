@@ -44,6 +44,11 @@
     <mat-slide-toggle formControlName="bidirectional"></mat-slide-toggle>
     {{form.value.bidirectional ? "Bidirectional" : "Unidirectional"}}
   </div>
+  <div>
+    Fade Style
+    <mat-slide-toggle formControlName="fade_after"></mat-slide-toggle>
+    {{form.value.fade_after ? "After" : "During"}}
+  </div>
   <div class="save">
     <button mat-raised-button (click)=save()>Save</button>
     <button mat-flat-button (click)=load()>Load</button>
