@@ -432,15 +432,15 @@ struct Disco {
 }
 
 impl Disco {
-    fn new(_bounds: Bounds, mut params: PainterParams) -> Self {
+    fn new(bounds: Bounds, mut params: PainterParams) -> Self {
         if params.secondary_colors.len() < 1 {
             params.secondary_colors.push(Color::new(0xFF0000));
         }
         if params.secondary_colors.len() < 2 {
             params.secondary_colors.push(Color::new(0x0000FF));
         }
-        Disco { params: params, leds: new_led_string(bounds.size()), tick: 0.0,
-                last_beat: 0.0}
+        Disco {params: params, leds: new_led_string(bounds.size()), tick: 0.0,
+               last_beat: 0.0}
     }
 }
 
