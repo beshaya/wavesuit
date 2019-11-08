@@ -1,10 +1,11 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 #[macro_use] extern crate rocket;
-use rocket::State;
+use rocket::{State, Data};
 use rocket::response::content;
 use std::sync::{Mutex};
 use crossbeam_channel::{bounded, Receiver, Sender};
 use std::{error::Error, thread};
+use std::io::Read;
 
 mod color;
 mod painter_params;
@@ -12,16 +13,22 @@ mod painter_params;
 pub use color::Color;
 pub use painter_params::PainterParams;
 
+const LIMIT: u64 = 1024;
+
 #[get("/")]
 fn get(params: State<Mutex<PainterParams>>) -> content::Json<String> {
     let data = params.lock().unwrap();
     content::Json(data.serialize())
 }
 
-#[post("/", format = "application/json", data = "<json_params>")]
-fn post(json_params: String,
+#[post("/", format = "application/json", data = "<data>")]
+fn post(data: Data,
         params: State<Mutex<PainterParams>>,
         sender: State<Sender<PainterParams>>) -> Result<(), Box<dyn Error>> {
+    let mut json_params = String::new();
+    if let Err(e) = data.open().take(LIMIT).read_to_string(&mut json_params) {
+        return Err(Box::new(e));
+    }
     let mut new_params = PainterParams::deserialize(&json_params)?;
     let mut old_params = params.lock().unwrap();
     *old_params = new_params.clone();
