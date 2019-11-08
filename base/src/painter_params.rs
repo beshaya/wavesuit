@@ -19,7 +19,7 @@ pub struct PainterParams {
     pub fade_after: bool,
     #[serde(skip)]
     pub color_index: usize,  // Shouldn't be public but w/e.
-
+    pub belt_only: bool,  // This is super specific but I'm out of time to do it elegantly.
 }
 
 impl PainterParams {

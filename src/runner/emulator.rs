@@ -16,17 +16,25 @@ use base::Color;
 
 static mut LEDS: Vec<Color> = Vec::new();
 
-struct EmulatorDisplay {}
+struct EmulatorDisplay {
+    offset: usize,
+}
 
 impl Display for EmulatorDisplay {
     fn set_pixel(&mut self, index: usize, r: u8, g: u8, b: u8) {
         unsafe {
-            LEDS[index] = Color{r: r, g: g, b: b};
+            LEDS[index + self.offset] = Color{r: r, g: g, b: b};
         }
     }
 
     fn show(&mut self) -> Result<(), Box<dyn Error>> {
         Ok(())
+    }
+
+    fn set_count(&mut self, count: usize) {
+        unsafe {
+            self.offset = LAYOUT.count - count;
+        }
     }
 }
 
@@ -137,15 +145,6 @@ where
 }
 
 pub fn get_display(dots: usize) -> Result<Box<dyn Display>, Box<dyn Error>> {
-    println!("Using an emulator display");
-    unsafe {
-        LEDS.resize_with(dots, || {Color{r: 0, g: 0, b: 0}});
-    }
-    Ok(Box::new(EmulatorDisplay{}))
-}
-
-pub fn run<F>(mut core_alg: F) -> Result<(), Box<dyn Error>>
-where F: FnMut() + 'static {
     unsafe {
         // Back
         let unit: f64 = 1.0 / 46.0;
@@ -159,12 +158,22 @@ where F: FnMut() + 'static {
         LAYOUT.add_offset_panel(unit * 7.0 /* orig_x */, unit * 4.0 /* orig_y */,
                                 0.0 /* strip_x */, unit /* strip_y */, 30 /* strip_len */,
                                 -unit /*panel_x */, 0.0 /* panel_y */ , 4 /* panel_len */);
+
         // Belt
         LAYOUT.add_offset_panel(0.5 - unit * 10.0 /* orig_x */, 1.0 - unit * 5.0 /* orig_y */,
                                 unit /* strip_x */, 0.0 /* strip_y */, 22 /* strip_len */,
                                 0.0 /* panel_x */, -unit /* panel_y */, 4 /* panel_len */);
     }
 
+    println!("Using an emulator display");
+    unsafe {
+        LEDS.resize_with(dots, || {Color{r: 0, g: 0, b: 0}});
+    }
+    Ok(Box::new(EmulatorDisplay{offset: 0}))
+}
+
+pub fn run<F>(mut core_alg: F) -> Result<(), Box<dyn Error>>
+where F: FnMut() + 'static {
     let application = gtk::Application::new(
         Some("com.github.gtk-rs.examples.cairotest"),
         Default::default(),

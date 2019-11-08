@@ -17,6 +17,7 @@ interface PainterParams {
   fade: number,
   bidirectional: boolean,
   fade_after: boolean,
+  belt_only: boolean,
 }
 
 const httpOptions = {
@@ -62,6 +63,7 @@ export class AppComponent  {
         fade: [data.fade],
         bidirectional: [data.bidirectional],
         fade_after: [data.fade_after],
+        belt_only: [data.belt_only],
       });
       this.initialParams = data;
       this.form.valueChanges.subscribe((val: PainterParams) => {

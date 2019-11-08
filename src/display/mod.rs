@@ -11,6 +11,7 @@ pub mod display_impl;
 pub trait Display {
     fn set_pixel(&mut self, index: usize, r: u8, g: u8, b: u8);
     fn show(&mut self) -> Result<(), Box<dyn Error>>;
+    fn set_count(&mut self, count: usize);
 }
 
 pub fn new(pixels: usize) -> Result<Box<dyn Display>, Box<dyn Error>> {

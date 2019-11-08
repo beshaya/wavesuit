@@ -35,6 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 bidirectional: true,
                 fade_after: true,
                 color_index: 0,
+                belt_only: false,
             }
         }
     };
@@ -43,17 +44,23 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     params.apply_dimming();  // Apply dimming after caching the web version.
 
-    let areas = vec![
+    let all_areas = vec![
         Bounds{height: 30, width: 16},
         Bounds{height: 30, width: 4},
         Bounds{height: 22, width: 4},
     ];
 
-    let dots: usize = areas.iter().map(|&x: &Bounds| x.size()).sum();
+    let belt = vec![
+        Bounds{height: 22, width: 4},
+    ];
+
+    let max_dots: usize = all_areas.iter().map(|&x: &Bounds| x.size()).sum();
 
     // Remember to enable spi via raspi-config!
-    let mut display = runner::get_display(dots)?;
+    let mut display = runner::get_display(max_dots)?;
 
+    let areas = if params.belt_only {&belt} else {&all_areas};
+    display.set_count(areas.iter().map(|&x: &Bounds| x.size()).sum());
     let mut painters: Vec<Box<dyn Painter>> = areas.iter().map(|&x: &Bounds| {
         painter::make_painter(x, params.clone())
     }).collect();
@@ -68,13 +75,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                 led += 1;
             }
         }
-        display.show();
+        display.show().unwrap();
         match webserver.try_recv() {
             Ok(new_params) => {
-                if new_params.painter != params.painter {
+                if new_params.belt_only != params.belt_only || new_params.painter != params.painter {
+                    let areas = if new_params.belt_only {&belt} else {&all_areas};
                     painters = areas.iter().map(|&x: &Bounds| {
                         painter::make_painter(x, params.clone())
                     }).collect();
+                    if new_params.belt_only != params.belt_only {
+                        let dots: usize = areas.iter().map(|&x: &Bounds| x.size()).sum();
+                        display.set_count(dots);
+                    }
                 } else {
                     for painter in painters.iter_mut() {
                         painter.set_params(new_params.clone());

@@ -21,6 +21,7 @@ impl Display for BlinktDisplay {
         self.blinkt.show()?;
         Ok(())
     }
+    fn set_count(&mut self, count: usize) {}
 }
 
 pub fn make_display(pixels: usize) -> Result<BlinktDisplay, Box<dyn Error>> {
