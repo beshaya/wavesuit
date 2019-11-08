@@ -120,6 +120,10 @@ fn fill_every_other(parity: usize, color: Color, leds: &mut LedString) {
     }
 }
 
+fn should_advance(tick: f32, speed: f32) -> bool {
+    return (tick + speed).floor() != tick.floor();
+}
+
 fn new_led_string (size: usize) -> LedString {
     let mut led_string = Vec::with_capacity(size);
     led_string.resize(size, Color::new(0x000000));
@@ -169,12 +173,8 @@ impl HexPainter {
 
 impl Painter for HexPainter {
     fn paint(&mut self) {
-        let advance: bool = self.tick > 2.0;  // Hex's are about 2 leds large
-        if advance {
-            self.tick = 0.0;
-        } else {
-            self.tick += self.params.speed;
-        }
+        let advance: bool = should_advance(self.tick, self.params.speed / 2.0);
+        self.tick += self.params.speed / 2.0;
         let mut new_hexes: Vec<Hex> = Vec::new();
         if !self.params.fade_after {
             fade_all(&mut self.leds, self.params.fade);
@@ -328,7 +328,7 @@ impl Painter for LinePainter {
     fn paint(&mut self) {
         // Advance on integers.
         self.tick += self.params.speed;
-        let advance: bool = self.tick > 1.0;  // Hex's are about 2 leds large
+        let advance: bool = self.tick >= 1.0;  // Hex's are about 2 leds large
         if advance {
             self.tick = 0.0;
         }
@@ -340,9 +340,12 @@ impl Painter for LinePainter {
                     self.params.secondary_colors[self.color_index % self.params.secondary_colors.len()];
             }
             if advance {
-                if trail.head_y.round() == trail.y_diag_start.round() && trail.x_dir == 0 {
+                if trail.head_y.floor() == trail.y_diag_start.floor() && trail.x_dir == 0 {
                     trail.y_dir /= 2.0;
                     trail.x_dir = if trail.head_x == 0 { 1 } else { -1 };
+                }
+                if trail.head_x == self.bounds.width as i32 / 2 || trail.head_x == self.bounds.width as i32 / 2- 1 {
+                    trail.x_dir *= -1;
                 }
                 if !self.bounds.in_x(trail.head_x + trail.x_dir) {
                     trail.y_dir *= 2.0;
@@ -404,7 +407,7 @@ impl Painter for Raindrops {
     fn paint(&mut self) {
         // Advance on integers.
         self.tick += self.params.speed;
-        let advance: bool = self.tick > 1.0;
+        let advance: bool = self.tick >= 1.0;
         if advance {
             self.tick = 0.0;
         }
