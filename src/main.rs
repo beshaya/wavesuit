@@ -6,6 +6,7 @@ use base::rocket_server;
 
 mod display;
 mod painter;
+use painter::{Bounds,Painter};
 
 #[cfg_attr(feature = "emulator", path = "runner/emulator.rs")]
 #[cfg_attr(not(feature = "emulator"), path = "runner/default_runner.rs")]
@@ -42,19 +43,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     params.apply_dimming();  // Apply dimming after caching the web version.
 
-    let width: usize = 4;
-    let height: usize = 30;
-    let back_height: usize = 30;
-    let back_width: usize = 16;
-    let dots: usize = width * height + back_height * back_width;
+    let areas = vec![
+        Bounds{height: 30, width: 16},
+        Bounds{height: 30, width: 4},
+        Bounds{height: 22, width: 4},
+    ];
+
+    let dots: usize = areas.iter().map(|&x: &Bounds| x.size()).sum();
 
     // Remember to enable spi via raspi-config!
     let mut display = runner::get_display(dots)?;
 
-    let mut painters = vec![
-        painter::make_painter(back_width, back_height, params.clone()),
-        painter::make_painter(width, height, params.clone()),
-    ];
+    let mut painters: Vec<Box<dyn Painter>> = areas.iter().map(|&x: &Bounds| {
+        painter::make_painter(x, params.clone())
+    }).collect();
 
     runner::run(move || {
         let mut led: usize = 0;
@@ -70,8 +72,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         match webserver.try_recv() {
             Ok(new_params) => {
                 if new_params.painter != params.painter {
-                    painters[0] = painter::make_painter(back_width, back_height, new_params.clone());
-                    painters[1] = painter::make_painter(width, height, new_params.clone());
+                    painters = areas.iter().map(|&x: &Bounds| {
+                        painter::make_painter(x, params.clone())
+                    }).collect();
                 } else {
                     for painter in painters.iter_mut() {
                         painter.set_params(new_params.clone());

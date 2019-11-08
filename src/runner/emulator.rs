@@ -160,11 +160,9 @@ where F: FnMut() + 'static {
                                 0.0 /* strip_x */, unit /* strip_y */, 30 /* strip_len */,
                                 -unit /*panel_x */, 0.0 /* panel_y */ , 4 /* panel_len */);
         // Belt
-        /*
         LAYOUT.add_offset_panel(0.5 - unit * 10.0 /* orig_x */, 1.0 - unit * 5.0 /* orig_y */,
                                 unit /* strip_x */, 0.0 /* strip_y */, 22 /* strip_len */,
                                 0.0 /* panel_x */, -unit /* panel_y */, 4 /* panel_len */);
-         */
     }
 
     let application = gtk::Application::new(

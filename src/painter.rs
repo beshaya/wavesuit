@@ -204,28 +204,28 @@ impl Painter for HexPainter {
             if advance {
                 // Figure out where adjacent hexes are. Turns out this sucks in my grid.
                 if self.bounds.flip_x(x) % 6 == 1 {
-                    if self.bounds.in_(x - 1, y + 2.5) {
+                    if self.bounds.in_(x - 2, y + 3.5) {
                         new_hexes.push(Hex{x: x - 1, y: y + 2.5, color: self.params.next_color()});
                     }
-                    if self.bounds.in_(x - 3, y + 0.5) {
+                    if self.bounds.in_(x - 4, y + 1.5) {
                         new_hexes.push(Hex{x: x - 3, y: y + 0.5, color: self.params.next_color()});
                     }
                 } else if self.bounds.flip_x(x) % 6 == 2 {
-                    if self.bounds.in_(x + 1, y + 2.5) {
+                    if self.bounds.in_(x + 2, y + 3.5) {
                         new_hexes.push(Hex{x: x + 1, y: y + 2.5, color: self.params.next_color()});
                     }
                     if self.bounds.in_(x - 4, y + 1.5) {
                         new_hexes.push(Hex{x: x - 3, y: y + 0.5, color: self.params.next_color()});
                     }
                 } else if self.bounds.flip_x(x) % 6 == 4 {
-                    if self.bounds.in_(x - 3, y - 0.5) {
+                    if self.bounds.in_(x - 4, y - 1.5) {
                         new_hexes.push(Hex{x: x - 3, y: y - 0.5, color: self.params.next_color()});
                     }
                     if self.bounds.in_(x - 2, y + 3.5) {
                         new_hexes.push(Hex{x: x - 1, y: y + 2.5, color: self.params.next_color()});
                     }
                 } else if self.bounds.flip_x(x) % 6 == 5 {
-                    if self.bounds.in_(x + 1, y + 2.5) {
+                    if self.bounds.in_(x + 2, y + 3.5) {
                         new_hexes.push(Hex{x: x + 1, y: y + 2.5, color: self.params.next_color()});
                     }
                     if self.bounds.in_(x - 4, y - 1.5) {
@@ -239,6 +239,8 @@ impl Painter for HexPainter {
             if new_hexes.len() == 0 {
                 if self.params.fade_after {
                     self.hold_frames = 40;
+                } else {
+                    self.fade_frames = 40;
                 }
                 return;
             }
@@ -472,13 +474,12 @@ impl Painter for Disco {
     }
 }
 
-pub fn make_painter(width: usize, height: usize, params: PainterParams) -> Box<dyn Painter> {
-    let bounds = Bounds { width: width, height: height };
+pub fn make_painter(bounds: Bounds, params: PainterParams) -> Box<dyn Painter> {
     if params.painter == "hex" {
         return Box::new(HexPainter::new(bounds, params));
     }
     if params.painter == "line" {
-        return Box::new(LinePainter::new(width, height, params));
+        return Box::new(LinePainter::new(bounds.width, bounds.height, params));
     }
     if params.painter == "fade" {
         return Box::new(FadePainter::new(bounds, params));
@@ -489,5 +490,5 @@ pub fn make_painter(width: usize, height: usize, params: PainterParams) -> Box<d
     if params.painter == "disco" {
         return Box::new(Disco::new(bounds, params));
     }
-    return Box::new(SweepPainter::new(width, height, params));
+    return Box::new(SweepPainter::new(bounds.width, bounds.height, params));
 }
