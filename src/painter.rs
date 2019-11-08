@@ -325,8 +325,11 @@ impl LinePainter {
 impl Painter for LinePainter {
     fn paint(&mut self) {
         // Advance on integers.
-        let advance: bool = self.tick.floor() < (self.tick + self.params.speed).floor();
         self.tick += self.params.speed;
+        let advance: bool = self.tick > 1.0;  // Hex's are about 2 leds large
+        if advance {
+            self.tick = 0.0;
+        }
         fade_all(&mut self.leds, self.params.fade);
         let mut reset = false;
         for mut trail in self.trails.iter_mut() {
@@ -398,8 +401,11 @@ impl Painter for Raindrops {
     fn set_params(&mut self, params: PainterParams) { self.params = params; }
     fn paint(&mut self) {
         // Advance on integers.
-        let advance: bool = self.tick.floor() < (self.tick + self.params.speed).floor();
         self.tick += self.params.speed;
+        let advance: bool = self.tick > 1.0;
+        if advance {
+            self.tick = 0.0;
+        }
         for idx in 0..self.leds.len() {
             self.leds[idx] *= self.params.fade;
         }

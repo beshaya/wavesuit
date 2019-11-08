@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Unable to load from file: {}", e);
             PainterParams {
                 painter: String::from("hex"),
-                global_brightness: 0.5,
+                global_brightness: 0.1,
                 speed: 0.8,
                 color: Color::new(0xFFFFFF),
                 secondary_colors: vec![
