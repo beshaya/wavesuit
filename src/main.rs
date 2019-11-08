@@ -81,7 +81,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 if new_params.belt_only != params.belt_only || new_params.painter != params.painter {
                     let areas = if new_params.belt_only {&belt} else {&all_areas};
                     painters = areas.iter().map(|&x: &Bounds| {
-                        painter::make_painter(x, params.clone())
+                        painter::make_painter(x, new_params.clone())
                     }).collect();
                     if new_params.belt_only != params.belt_only {
                         let dots: usize = areas.iter().map(|&x: &Bounds| x.size()).sum();
