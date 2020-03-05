@@ -31,9 +31,9 @@ impl Display for EmulatorDisplay {
         Ok(())
     }
 
-    fn set_count(&mut self, count: usize) {
+    fn set_offset(&mut self, offset: usize) {
         unsafe {
-            self.offset = LAYOUT.count - count;
+            self.offset = offset;
         }
     }
 }
@@ -69,8 +69,8 @@ impl LedLayout {
     }
     fn add_offset_panel(&mut self, mut orig_x: f64, mut orig_y: f64,
                         strip_x: f64, strip_y: f64, strip_len: usize,
-                        panel_x: f64, panel_y: f64, panel_len: usize) {
-        let mut backwards = false;
+                        panel_x: f64, panel_y: f64, panel_len: usize,
+                        mut backwards: bool) {
         for _i in 0..panel_len {
             self.add_strip(LedStrip{count: strip_len, x_start: orig_x, y_start: orig_y,
                                     x_spacing: strip_x, y_spacing: strip_y, backwards: backwards});
@@ -107,7 +107,7 @@ fn build_ui(application: &gtk::Application)
                 let mut x = strip.x_start;
                 let mut y = strip.y_start;
                 for _strip_index in 0..strip.count {
-                    let color = LEDS[led_index];
+                    let color = if LEDS.len() > led_index { LEDS[led_index] } else { Color::black() };
                     cr.set_source_rgb(color.r as f64 / 255.0,
                                        color.g as f64 / 255.0,
                                        color.b as f64 / 255.0);
@@ -150,19 +150,29 @@ pub fn get_display(dots: usize) -> Result<Box<dyn Display>, Box<dyn Error>> {
         let unit: f64 = 1.0 / 46.0;
         LAYOUT.add_offset_panel(0.5 + unit * 9.0 /* orig_x */, unit * 4.0 /* orig_y */,
                                 0.0 /* strip_x */, unit /* strip_y */, 30 /* strip_len */,
-                                -unit /* panel_x */, 0.0 /* panel_y */, 8 /* panel_len */);
+                                -unit /* panel_x */, 0.0 /* panel_y */, 8 /* panel_len */,
+                                false /* backwards */);
+
         LAYOUT.add_offset_panel(0.5 - unit * 1.0 /* orig_x */, unit * 4.0 /* orig_y */,
                                 0.0 /* strip_x */, unit /* strip_y */, 30 /* strip_len */,
-                                -unit /* panel_x */, 0.0 /* panel_y */, 8 /* panel_len */);
+                                -unit /* panel_x */, 0.0 /* panel_y */, 8 /* panel_len */,
+                                false /* backwards */);
 
-        LAYOUT.add_offset_panel(unit * 7.0 /* orig_x */, unit * 4.0 /* orig_y */,
+        // Sleeve (oops the first strip has a broken led).
+        LAYOUT.add_offset_panel(unit * 7.0 /* orig_x */, unit * 5.0 /* orig_y */,
+                                0.0 /* strip_x */, unit /* strip_y */, 29 /* strip_len */,
+                                -unit /*panel_x */, 0.0 /* panel_y */ , 1 /* panel_len */,
+                                false /* backwards */);
+        LAYOUT.add_offset_panel(unit * 6.0 /* orig_x */, unit * 4.5 /* orig_y */,
                                 0.0 /* strip_x */, unit /* strip_y */, 30 /* strip_len */,
-                                -unit /*panel_x */, 0.0 /* panel_y */ , 4 /* panel_len */);
+                                -unit /*panel_x */, 0.0 /* panel_y */ , 3 /* panel_len */,
+                                true /* backwards */);
 
         // Belt
         LAYOUT.add_offset_panel(0.5 - unit * 10.0 /* orig_x */, 1.0 - unit * 5.0 /* orig_y */,
                                 unit /* strip_x */, 0.0 /* strip_y */, 22 /* strip_len */,
-                                0.0 /* panel_x */, -unit /* panel_y */, 4 /* panel_len */);
+                                0.0 /* panel_x */, -unit /* panel_y */, 4 /* panel_len */,
+                                false /* backwards */);
     }
 
     println!("Using an emulator display");

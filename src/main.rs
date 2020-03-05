@@ -47,33 +47,45 @@ fn main() -> Result<(), Box<dyn Error>> {
     let all_areas = vec![
         Bounds{height: 30, width: 16},
         Bounds{height: 30, width: 4},
-        Bounds{height: 22, width: 4},
     ];
 
     let belt = vec![
         Bounds{height: 22, width: 4},
     ];
 
-    let max_dots: usize = all_areas.iter().map(|&x: &Bounds| x.size()).sum();
+    let all_areas_full_size: usize = all_areas.iter().map(|&x: &Bounds| x.size()).sum();
+    let all_areas_size: usize = all_areas_full_size - 1;
+    let belt_size: usize = belt.iter().map(|&x: &Bounds| x.size()).sum();
 
     // Remember to enable spi via raspi-config!
-    let mut display = runner::get_display(max_dots)?;
+    let mut display = runner::get_display(all_areas_size)?;
 
     let areas = if params.belt_only {&belt} else {&all_areas};
-    display.set_count(areas.iter().map(|&x: &Bounds| x.size()).sum());
+    let count: usize = if params.belt_only { belt_size } else { all_areas_size };
+    if params.belt_only {
+        display.set_offset(all_areas_size);
+    } else {
+        display.set_offset(0);
+    }
     let mut painters: Vec<Box<dyn Painter>> = areas.iter().map(|&x: &Bounds| {
         painter::make_painter(x, params.clone())
     }).collect();
 
     runner::run(move || {
         let mut led: usize = 0;
+        let mut idx: usize = 0;
         for painter in painters.iter_mut() {
             painter.paint();
             for pix in 0..painter.length() {
+                // I derped and borked the first LED on the sleeve x.x
+                if idx == 1 && pix == 0 {
+                    continue;
+                }
                 let pixel = painter.get(pix);
                 display.set_pixel(led, pixel.r, pixel.g, pixel.b);
                 led += 1;
             }
+            idx += 1;
         }
         display.show().unwrap();
         match webserver.try_recv() {
@@ -83,9 +95,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                     painters = areas.iter().map(|&x: &Bounds| {
                         painter::make_painter(x, new_params.clone())
                     }).collect();
+
                     if new_params.belt_only != params.belt_only {
+                        /*
                         let dots: usize = areas.iter().map(|&x: &Bounds| x.size()).sum();
                         display.set_count(dots);
+                         */
                     }
                 } else {
                     for painter in painters.iter_mut() {

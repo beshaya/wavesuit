@@ -17,6 +17,14 @@ impl Color {
         let b = hex_code as u8;
         Color { r: log_scale(r), g: log_scale(g), b: log_scale(b) }
     }
+
+    pub fn black() -> Color {
+        Color::new(0x000000)
+    }
+
+    pub fn white() -> Color {
+        Color::new(0xFFFFFF)
+    }
 }
 
 impl ops::Mul<f32> for Color {
