@@ -32,9 +32,7 @@ impl Display for EmulatorDisplay {
     }
 
     fn set_offset(&mut self, offset: usize) {
-        unsafe {
-            self.offset = offset;
-        }
+        self.offset = offset;
     }
 }
 

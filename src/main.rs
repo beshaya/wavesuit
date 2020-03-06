@@ -61,7 +61,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut display = runner::get_display(all_areas_size)?;
 
     let areas = if params.belt_only {&belt} else {&all_areas};
-    let count: usize = if params.belt_only { belt_size } else { all_areas_size };
     if params.belt_only {
         display.set_offset(all_areas_size);
     } else {
