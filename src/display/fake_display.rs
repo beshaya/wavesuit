@@ -12,7 +12,7 @@ impl Display for FakeDisplay {
     fn show(&mut self) -> Result<(), Box<dyn Error>> {
         Ok(())
     }
-    fn set_offset(&mut self, count: usize) {}
+    fn set_offset(&mut self, _count: usize) {}
 }
 
 pub fn make_display(pixels: usize) -> Result<FakeDisplay, Box<dyn Error>> {
