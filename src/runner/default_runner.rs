@@ -28,7 +28,7 @@ pub fn get_display(dots: usize) -> Result<Box<dyn display::Display>, Box<dyn Err
 
 pub fn run<F>(mut core_alg: F) -> Result<(), Box<dyn Error>>
 where F: FnMut() + 'static {
-    let ticks = tick(Duration::from_millis(42));
+    let ticks = tick(Duration::from_millis(30));
     let ctrl_c_events = ctrl_channel()?;
 
     loop {

@@ -138,7 +138,7 @@ where
         drawing_area.queue_draw_area(0, 0, 500, 500);
         gtk::Continue(true)
     };
-    gtk::timeout_add(42, tick);
+    gtk::timeout_add(30, tick);
 
 }
 
